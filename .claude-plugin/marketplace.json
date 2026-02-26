@@ -1,0 +1,11 @@
+{
+  "name": "leafril-plugins",
+  "plugins": [
+    {
+      "name": "leafril-plugins",
+      "source": ".",
+      "description": "개인 글로벌 Claude Code 설정",
+      "version": "1.0.0"
+    }
+  ]
+}
