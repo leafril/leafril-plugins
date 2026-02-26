@@ -1,25 +1,14 @@
 # Project
 
 기능 개발 문서(PRD + 일정 + 진행 상황)를 생성·수정하는 서브커맨드입니다.
-
-**Obsidian vault 경로: `$OBSIDIAN_VAULT/projects/`**
-
-## 파일 구조
-
-```
-projects/
-└── {project}/
-    └── {기능명}.md
-```
-
-- 예시: `projects/kids-backend/오늘찰칵-별시스템-알림톡-재설계.md`
+문서 구조·메타데이터 규칙은 vault CLAUDE.md에 위임한다.
 
 ## 실행 프로토콜
 
 ### Phase 1: 대상 파일 결정
 
 1. 인자로 `{프로젝트}/{기능명}` 또는 `{기능명}`이 전달되면 해당 파일을 찾거나 생성
-2. 인자 없이 호출되면 `projects/` 하위 파일 목록을 보여주고 AskUserQuestion으로 선택
+2. 인자 없이 호출되면 `$OBSIDIAN_VAULT/projects/` 하위 파일 목록을 보여주고 AskUserQuestion으로 선택
 3. 프로젝트명이 생략되면 현재 작업 디렉토리의 프로젝트명을 추론
 
 ### Phase 2: 파일 읽기
@@ -30,11 +19,6 @@ projects/
 ### Phase 3: 작성·수정
 
 사용자가 전달한 내용에 따라 문서를 생성하거나 수정한다.
-문서 구조와 규칙은 Obsidian vault의 `CLAUDE.md`(`$OBSIDIAN_VAULT/CLAUDE.md`)의 Project 규칙을 따른다.
-
-- **생성**: PRD(배경 → 요구 사항 → 정책 → 기대 효과) + 예상 일정 + 진행 상황 구조로 작성
-- **수정**: 사용자가 변경 사항을 말하면 기존 문서에 반영
-- **진행 상황 업데이트**: 날짜별 섹션으로 작업 내용과 피드백을 추가. 상세 기록은 daybook에 위임.
 
 ### Phase 4: Git 커밋 (선택)
 
