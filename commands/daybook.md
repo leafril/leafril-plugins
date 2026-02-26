@@ -1,13 +1,13 @@
 # Daybook
 
 Engineering Daybook 작성을 도와주는 서브커맨드입니다.
-양식·템플릿·태그 규칙은 vault CLAUDE.md에 위임한다.
+양식·템플릿·태그 규칙은 노트 루트의 CLAUDE.md에 위임한다.
 
 ## 실행 프로토콜
 
-### 전제조건: Vault 경로 확인
+### 전제조건: 노트 루트 경로 확인
 
-`~/.claude/note-plugins.json`에서 `obsidianVault` 값을 확인한다. 없거나 존재하지 않는 경로이면 AskUserQuestion으로 물어보고, 응답을 `~/.claude/note-plugins.json`에 저장한다.
+`~/.claude/note-plugins.json`에서 `noteRoot` 값을 확인한다. 없거나 존재하지 않는 경로이면 AskUserQuestion으로 물어보고, 응답을 `~/.claude/note-plugins.json`에 저장한다.
 
 ### Phase 0: 오늘 할 일 자동 생성 (업무 시작 시)
 
@@ -25,7 +25,7 @@ Engineering Daybook 작성을 도와주는 서브커맨드입니다.
 ### Phase 1: 파일 준비
 
 1. 오늘 날짜 파일 확인
-2. 파일이 없으면 vault CLAUDE.md 템플릿으로 생성 (Phase 0 결과 포함)
+2. 파일이 없으면 노트 루트의 CLAUDE.md 템플릿으로 생성 (Phase 0 결과 포함)
 3. 파일이 있으면 기존 내용 읽기
 
 ### Phase 2: 파일 작성

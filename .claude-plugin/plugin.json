@@ -1,5 +1,5 @@
 {
   "name": "note-plugins",
-  "description": "개인 글로벌 Claude Code 설정",
-  "version": "1.1.0"
+  "description": "개발 노트 작성 및 관리 플러그인",
+  "version": "1.2.0"
 }

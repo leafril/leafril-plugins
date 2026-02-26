@@ -1,18 +1,18 @@
 # Project
 
 기능 개발 문서(PRD + 일정 + 진행 상황)를 생성·수정하는 서브커맨드입니다.
-문서 구조·메타데이터 규칙은 vault CLAUDE.md에 위임한다.
+문서 구조·메타데이터 규칙은 노트 루트의 CLAUDE.md에 위임한다.
 
 ## 실행 프로토콜
 
-### 전제조건: Vault 경로 확인
+### 전제조건: 노트 루트 경로 확인
 
-`~/.claude/note-plugins.json`에서 `obsidianVault` 값을 확인한다. 없거나 존재하지 않는 경로이면 AskUserQuestion으로 물어보고, 응답을 `~/.claude/note-plugins.json`에 저장한다.
+`~/.claude/note-plugins.json`에서 `noteRoot` 값을 확인한다. 없거나 존재하지 않는 경로이면 AskUserQuestion으로 물어보고, 응답을 `~/.claude/note-plugins.json`에 저장한다.
 
 ### Phase 1: 대상 파일 결정
 
 1. 인자로 `{프로젝트}/{기능명}` 또는 `{기능명}`이 전달되면 해당 파일을 찾거나 생성
-2. 인자 없이 호출되면 vault 경로의 `projects/` 하위 파일 목록을 보여주고 AskUserQuestion으로 선택
+2. 인자 없이 호출되면 노트 루트의 `projects/` 하위 파일 목록을 보여주고 AskUserQuestion으로 선택
 3. 프로젝트명이 생략되면 현재 작업 디렉토리의 프로젝트명을 추론
 
 ### Phase 2: 파일 읽기
