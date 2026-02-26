@@ -5,9 +5,9 @@
   },
   "plugins": [
     {
-      "name": "leafril-plugins",
+      "name": "note-plugins",
       "description": "개인 글로벌 Claude Code 설정",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "source": {
         "source": "github",
         "repo": "leafril/leafril-plugins"
