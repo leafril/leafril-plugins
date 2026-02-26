@@ -2,7 +2,7 @@
 
 기능 개발 문서(PRD + 일정 + 진행 상황)를 생성·수정하는 서브커맨드입니다.
 
-**Obsidian vault 경로: `~/Obsidian/Leafril/projects/`**
+**Obsidian vault 경로: `$OBSIDIAN_VAULT/projects/`**
 
 ## 파일 구조
 
@@ -30,7 +30,7 @@ projects/
 ### Phase 3: 작성·수정
 
 사용자가 전달한 내용에 따라 문서를 생성하거나 수정한다.
-문서 구조와 규칙은 Obsidian vault의 `CLAUDE.md`(`~/Obsidian/Leafril/CLAUDE.md`)의 Project 규칙을 따른다.
+문서 구조와 규칙은 Obsidian vault의 `CLAUDE.md`(`$OBSIDIAN_VAULT/CLAUDE.md`)의 Project 규칙을 따른다.
 
 - **생성**: PRD(배경 → 요구 사항 → 정책 → 기대 효과) + 예상 일정 + 진행 상황 구조로 작성
 - **수정**: 사용자가 변경 사항을 말하면 기존 문서에 반영

@@ -3,7 +3,7 @@
 Engineering Daybook 작성을 도와주는 서브커맨드입니다.
 Dave Thomas (The Pragmatic Programmer)의 Engineering Daybook 철학을 기반으로 합니다.
 
-**양식 및 규칙은 Obsidian vault의 `CLAUDE.md`(`~/Obsidian/Leafril/CLAUDE.md`)를 따릅니다.**
+**양식 및 규칙은 Obsidian vault의 `CLAUDE.md`(`$OBSIDIAN_VAULT/CLAUDE.md`)를 따릅니다.**
 
 ## 실행 프로토콜
 
