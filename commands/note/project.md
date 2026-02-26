@@ -7,7 +7,7 @@
 
 ### 전제조건: Vault 경로 확인
 
-플러그인 루트의 `config.json`에서 `obsidianVault` 값을 확인한다. 없거나 존재하지 않는 경로이면 AskUserQuestion으로 물어보고, 응답을 `config.json`에 저장한다.
+`${CLAUDE_PLUGIN_ROOT}/config.json`에서 `obsidianVault` 값을 확인한다. 없거나 존재하지 않는 경로이면 AskUserQuestion으로 물어보고, 응답을 `config.json`에 저장한다.
 
 ### Phase 1: 대상 파일 결정
 
