@@ -7,7 +7,7 @@ Engineering Daybook 작성을 도와주는 서브커맨드입니다.
 
 ### 전제조건: Vault 경로 확인
 
-`${CLAUDE_PLUGIN_ROOT}/config.json`에서 `obsidianVault` 값을 확인한다. 없거나 존재하지 않는 경로이면 AskUserQuestion으로 물어보고, 응답을 `config.json`에 저장한다.
+`~/.claude/note-plugins.json`에서 `obsidianVault` 값을 확인한다. 없거나 존재하지 않는 경로이면 AskUserQuestion으로 물어보고, 응답을 `~/.claude/note-plugins.json`에 저장한다.
 
 ### Phase 0: 오늘 할 일 자동 생성 (업무 시작 시)
 
