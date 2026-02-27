@@ -33,7 +33,7 @@ Engineering Daybook 작성을 도와주는 서브커맨드입니다.
 사용자가 내용을 전달하면:
 1. 개별 섹션 파일(`{주제}.md`)을 생성하고 내용 작성
 2. `Daybook.md`의 `## 기록` 섹션에 `![[주제]]` embed 추가
-3. 섹션 파일에 `feature` 필드가 있으면, 작성 완료 후 안내한다: "project 문서에 daybook 링크를 추가하려면 `/note-plugins:project`를 실행하세요"
+3. 섹션 파일에 `feature` 필드가 있으면, 작성 완료 후 안내한다: "project 문서의 `## 관련 문서`에 링크를 추가하려면 `/note-plugins:project`를 실행하세요"
 
 ### Phase 3: Git 커밋 (선택)
 
