@@ -18,22 +18,10 @@ Project 문서와 관련 daybook 기록을 한번에 조회하는 읽기 전용 
 
 선택된 project 문서의 전체 내용을 읽고 출력한다.
 
-### Phase 3: 관련 Daybook 검색
+### Phase 3: 관련 Daybook 출력
 
-선택된 project 문서에서 검색 키를 추출한다:
-- `organization`: 문서가 속한 회사 폴더 (nuvilab, leafril)
-- `project`: frontmatter의 `project` 필드
-- `feature`: 문서 파일명 (확장자 제외)
-
-`engineering daybook/` 하위의 개별 섹션 파일에서 위 키와 매칭되는 파일을 검색한다:
-1. `feature` 필드에 `[[파일명]]`이 포함된 파일을 우선 검색
-2. `feature`가 없는 파일은 `organization` + `project` 조합으로 검색
-3. 찾은 파일들을 `created` 날짜 기준 최신순으로 정렬한다
-
-### Phase 4: Daybook 내용 출력
-
-찾은 daybook 섹션 파일들의 내용을 최신순으로 출력한다.
-파일이 없으면 "관련 daybook 기록이 없습니다"로 안내한다.
+project 문서의 `## Daybook` 섹션에서 링크 목록을 읽는다. 각 링크의 파일을 순서대로 읽고 내용을 출력한다.
+`## Daybook` 섹션이 없거나 링크가 없으면 "관련 daybook 기록이 없습니다"로 안내한다.
 
 ## 주의
 
