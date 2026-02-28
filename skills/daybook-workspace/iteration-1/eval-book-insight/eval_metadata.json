@@ -1,0 +1,13 @@
+{
+  "eval_id": 1,
+  "eval_name": "book-insight",
+  "prompt": "Pragmatic Programmer 읽다가 DRY 원칙에 대해 새로 깨달은 게 있어. 코드 중복만이 아니라 지식의 중복이 핵심이라는 것. 같은 비즈니스 규칙이 코드와 문서에 각각 있으면 그것도 DRY 위반",
+  "assertions": [
+    {"name": "directory_structure", "description": "engineering daybook/2026/03/01/ 경로에 생성"},
+    {"name": "frontmatter_created", "description": "created: 2026-03-01 필드 존재"},
+    {"name": "summary_callout", "description": "> [!note] Summary 콜아웃 존재"},
+    {"name": "summary_core_labels", "description": "배경/결론 핵심 레이블 사용"},
+    {"name": "filename_descriptive", "description": "주제를 구체적으로 표현하는 파일명"},
+    {"name": "tags_present", "description": "주제 관련 태그 존재"}
+  ]
+}

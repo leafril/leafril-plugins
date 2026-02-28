@@ -1,0 +1,26 @@
+{
+  "skill_name": "daybook",
+  "evals": [
+    {
+      "id": 0,
+      "name": "dev-decision",
+      "prompt": "API 응답을 envelope 방식으로 바꾸기로 했어. 기존에는 바로 데이터를 반환했는데, 에러 코드 표준화 때문에 { status, data, error } 구조로 감싸기로 함",
+      "expected_output": "API 네이밍/설계 관련 daybook 섹션 파일. Summary 콜아웃에 배경+결론, 서술부에 맥락",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "book-insight",
+      "prompt": "Pragmatic Programmer 읽다가 DRY 원칙에 대해 새로 깨달은 게 있어. 코드 중복만이 아니라 지식의 중복이 핵심이라는 것. 같은 비즈니스 규칙이 코드와 문서에 각각 있으면 그것도 DRY 위반",
+      "expected_output": "DRY 원칙 인사이트 daybook 섹션 파일. Summary에 배경+결론, 개발 외 맥락도 자연스럽게 기록",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "debugging",
+      "prompt": "S3 업로드가 계속 실패해서 3시간 삽질함. Content-Type을 명시 안 해서 octet-stream으로 올라가는 바람에 CloudFront에서 캐시가 안 됐던 거였음",
+      "expected_output": "디버깅 과정 daybook 섹션 파일. Summary에 문제+원인+해결, 서술과 코드 분리",
+      "files": []
+    }
+  ]
+}

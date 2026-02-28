@@ -1,0 +1,10 @@
+{
+  "expectations": [
+    {"text": "directory_structure", "passed": true, "evidence": "engineering daybook/2026/03/01/ 하위에 생성"},
+    {"text": "frontmatter_created", "passed": true, "evidence": "created: 2026-03-01 존재"},
+    {"text": "summary_callout", "passed": true, "evidence": "> [!note] Summary 콜아웃 존재"},
+    {"text": "summary_core_labels", "passed": true, "evidence": "배경, 결론 레이블 사용"},
+    {"text": "filename_descriptive", "passed": true, "evidence": "DRY 원칙 — 코드 중복이 아니라 지식의 중복.md — 구체적"},
+    {"text": "tags_present", "passed": true, "evidence": "tags: [dry, software-design]"}
+  ]
+}

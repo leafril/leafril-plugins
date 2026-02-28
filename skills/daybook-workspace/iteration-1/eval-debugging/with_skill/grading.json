@@ -1,0 +1,10 @@
+{
+  "expectations": [
+    {"text": "directory_structure", "passed": true, "evidence": "engineering daybook/2026/03/01/ 하위에 생성"},
+    {"text": "frontmatter_created", "passed": true, "evidence": "created: 2026-03-01 존재"},
+    {"text": "summary_callout", "passed": true, "evidence": "> [!note] Summary 콜아웃 존재"},
+    {"text": "summary_core_labels", "passed": true, "evidence": "배경, 원인(자유 레이블), 결론 사용"},
+    {"text": "filename_descriptive", "passed": true, "evidence": "S3 업로드 Content-Type 누락으로 CloudFront 캐시 실패.md — 구체적"},
+    {"text": "prose_code_separation", "passed": true, "evidence": "서술에 코드 이름 없음, Content-Type 값은 설정값으로 인라인 사용 적절"}
+  ]
+}
