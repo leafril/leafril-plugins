@@ -7,7 +7,7 @@
     {
       "name": "note-plugins",
       "description": "개발 노트 작성 및 관리 플러그인",
-      "version": "2.2.1",
+      "version": "2.2.2",
       "source": {
         "source": "github",
         "repo": "leafril/leafril-plugins"
