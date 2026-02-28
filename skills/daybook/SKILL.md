@@ -28,9 +28,10 @@ Dave Thomas 스타일의 Engineering Daybook을 작성하는 스킬.
 
 ### Phase 1: 파일 준비
 
-1. rules.md를 읽고 디렉터리 패턴을 확인한다
-2. 오늘 날짜로 디렉터리 경로 결정 — 기존 디렉터리가 다른 형식이더라도 rules.md의 패턴을 따른다
-3. 디렉터리가 없으면 생성
+1. references/rules.md를 읽는다
+2. 디렉터리 생성: `{noteRoot}/engineering daybook/{YYYY}/{MM}/{DD}/`
+   - 예: `engineering daybook/2026/03/01/`
+   - 기존 디렉터리가 다른 형식(예: `03-March/01 Sun/`)이더라도 이 패턴을 따른다
 
 ### Phase 2: 섹션 파일 작성
 
