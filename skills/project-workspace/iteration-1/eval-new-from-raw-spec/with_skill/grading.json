@@ -1,0 +1,12 @@
+{
+  "expectations": [
+    {"text": "frontmatter_project", "passed": true, "evidence": "project: kids-backend 존재"},
+    {"text": "frontmatter_status", "passed": true, "evidence": "status: planning 존재"},
+    {"text": "checklist_format", "passed": true, "evidence": "- [ ] 형식 체크리스트 7항목"},
+    {"text": "no_code_terms", "passed": true, "evidence": "요구 사항에 코드 용어 없음"},
+    {"text": "raw_filtered", "passed": true, "evidence": "가설, 참고 자료, 경쟁사 분석 제거됨"},
+    {"text": "policy_extracted", "passed": true, "evidence": "정책 섹션에 비즈니스 규칙 4건 정리"},
+    {"text": "backend_scope", "passed": true, "evidence": "UI 애니메이션, 오디오 에셋, 별자리 UI 제거. 활동 기록(오늘찰칵→역할 용어 치환)"},
+    {"text": "no_schedule_table", "passed": true, "evidence": "예상 일정 테이블 없음"}
+  ]
+}

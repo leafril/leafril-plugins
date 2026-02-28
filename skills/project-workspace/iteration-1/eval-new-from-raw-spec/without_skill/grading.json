@@ -1,0 +1,12 @@
+{
+  "expectations": [
+    {"text": "frontmatter_project", "passed": true, "evidence": "project: kids-backend 존재"},
+    {"text": "frontmatter_status", "passed": true, "evidence": "status: planning 존재"},
+    {"text": "checklist_format", "passed": false, "evidence": "체크리스트 없음. 예상 일정 테이블로 작업 관리"},
+    {"text": "no_code_terms", "passed": true, "evidence": "요구 사항에 코드 용어 없음"},
+    {"text": "raw_filtered", "passed": false, "evidence": "기대 효과 섹션 남아있음, TTS/블러 등 프론트 영역 포함"},
+    {"text": "policy_extracted", "passed": true, "evidence": "정책 섹션 존재"},
+    {"text": "backend_scope", "passed": false, "evidence": "TTS 연동, 블러 단계 정보, 활동 사진 블러 해제 등 프론트엔드 영역 포함"},
+    {"text": "no_schedule_table", "passed": false, "evidence": "예상 일정 테이블(공수, 의존 관계, 리스크) 존재"}
+  ]
+}

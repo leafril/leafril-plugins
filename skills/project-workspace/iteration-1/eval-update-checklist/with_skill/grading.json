@@ -1,0 +1,8 @@
+{
+  "expectations": [
+    {"text": "item_checked", "passed": true, "evidence": "렐름 목록 조회 API가 [x]로 변경"},
+    {"text": "link_added", "passed": true, "evidence": "[[2026/03/01/QueryDSL 도입]] 추가됨"},
+    {"text": "link_format", "passed": true, "evidence": "[[YYYY/MM/DD/주제]] 형식 준수"},
+    {"text": "no_unintended_changes", "passed": true, "evidence": "다른 항목 변경 없음"}
+  ]
+}

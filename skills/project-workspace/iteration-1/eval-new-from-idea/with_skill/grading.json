@@ -1,0 +1,11 @@
+{
+  "expectations": [
+    {"text": "frontmatter_project", "passed": true, "evidence": "project: bilgex-backend 존재"},
+    {"text": "frontmatter_status", "passed": true, "evidence": "status: planning 존재"},
+    {"text": "checklist_format", "passed": true, "evidence": "- [ ] 형식 체크리스트 3항목"},
+    {"text": "no_code_terms", "passed": true, "evidence": "요구 사항에 코드 용어 없음"},
+    {"text": "requirements_present", "passed": true, "evidence": "요구 사항 2건 존재"},
+    {"text": "lean_document", "passed": true, "evidence": "PRD 틀, 예상 일정, 기대 효과 없음. 배경+요구사항+정책+작업목록+관련문서만"},
+    {"text": "no_schedule_table", "passed": true, "evidence": "예상 일정 테이블 없음"}
+  ]
+}
