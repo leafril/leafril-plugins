@@ -1,11 +1,9 @@
 ---
 name: library
 description: >
-  개발 개념·기술 지식을 Obsidian library 노트로 정리. "이거 뭐야", "정리해줘",
-  "library", "개념 정리", "노트로 남겨줘" 등을 언급하거나, 대화 중 사용자가 몰랐던
-  개념을 새로 배웠을 때 이 스킬을 사용한다. /library로 직접 호출하거나, 대화 중
-  "이 개념 따로 정리해두자", "나중에 찾아볼 수 있게" 같은 의도가 보이면 자동으로
-  트리거한다. 기존 library 문서를 업데이트할 때도 사용한다.
+  Create or update knowledge notes for dev concepts and technical topics.
+  Trigger on "library", "what is this", "explain this concept", "take notes",
+  or when user learns something new during conversation.
 ---
 
 # Library

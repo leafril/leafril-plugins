@@ -1,12 +1,10 @@
 ---
 name: project
 description: >
-  기능 개발 문서 생성·수정. 요구 사항, 정책, 작업 목록, 관련 daybook 링크를
-  하나의 문서로 관리한다. Claude Code가 새 세션에서 별도 설명 없이 작업을 이어갈 수 있는
-  컨텍스트 허브 역할. "프로젝트 문서 만들어줘", "기능 정리", "작업 목록 업데이트",
-  "project", "PRD" 등을 언급하거나, 새 기능 개발을 시작할 때 이 스킬을 사용한다.
-  /project로 직접 호출하거나, "이 기능 스펙 정리하자", "작업 현황 업데이트해줘" 같은
-  의도가 보이면 자동으로 트리거한다.
+  Create or update feature development docs — requirements, policies, task checklists,
+  and daybook links in one document. Acts as a context hub so Claude Code can resume
+  work without re-explanation. Trigger on "project", "PRD", "feature spec", "task list",
+  or when starting new feature development.
 ---
 
 # Project

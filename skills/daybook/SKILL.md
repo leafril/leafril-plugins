@@ -1,11 +1,9 @@
 ---
 name: daybook
 description: >
-  Engineering Daybook 작성. 개발 중 내린 결정, 문제 해결 과정, TIL, 책/영상 인사이트 등을
-  구조화된 일별 마크다운 기록으로 남긴다. "기록해줘", "daybook", "오늘 배운 것",
-  "결정 사항", "회고", "노트 작성", "정리해줘" 등을 언급하거나, 작업 중 겪은 경험을
-  기록하고 싶을 때 이 스킬을 사용한다. /daybook으로 직접 호출하거나, 대화 중
-  "이거 기록해두자", "나중에 참고하려고" 같은 의도가 보이면 자동으로 트리거한다.
+  Write engineering daybook entries — decisions, problem-solving, TILs, and insights
+  as structured daily markdown notes. Trigger on "daybook", "record this", "log this",
+  "TIL", or intent to capture dev experiences for future reference.
 ---
 
 # Daybook
