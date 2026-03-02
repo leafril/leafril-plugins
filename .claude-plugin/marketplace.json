@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "note-plugins",
-      "description": "개발 노트 작성 및 관리 플러그인",
+      "description": "Write and manage Engineering Daybook entries, knowledge notes (library), and feature development docs (project)",
       "version": "1.0.0",
       "source": {
         "source": "github",
