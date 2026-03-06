@@ -8,10 +8,13 @@
       "name": "note-plugins",
       "description": "Write and manage Engineering Daybook entries and knowledge notes (library)",
       "version": "1.1.0",
-      "source": {
-        "source": "github",
-        "repo": "leafril/leafril-plugins"
-      }
+      "source": "./plugins/note-plugins"
+    },
+    {
+      "name": "dev-tools",
+      "description": "Developer productivity tools for git workflow and project management",
+      "version": "1.0.0",
+      "source": "./plugins/dev-tools"
     }
   ]
 }
