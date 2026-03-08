@@ -8,12 +8,12 @@
 
 ### 섹션 파일
 - 패턴: `daybook/{YYYY}/{MM}/{DD}/{주제}.md`
-- 예시: `daybook/2026/02/26/캐시 무효화 전략 선택.md`
+- 예시: `daybook/2026/02/26/API 응답 포맷 결정.md`
 - 역할: 하나의 주제에 대한 기록. 일별 디렉터리 안에 주제별로 파일을 생성한다.
 
 ### 링크 규칙
 - 링크 시 연도/월/일 경로를 명시한다
-- 예시: `[[2026/02/26/캐시 무효화 전략 선택]]`
+- 예시: `[[2026/02/26/API 응답 포맷 결정]]`
 
 ## 섹션 파일 템플릿
 
@@ -46,9 +46,9 @@ created: YYYY-MM-DD
 ```markdown
 ---
 created: 2026-02-26
-organization: mycompany
-project: order-api
-task: "[[결제-흐름-개선]]"
+organization: acme
+project: user-api
+task: "[[인증-흐름-개선]]"
 ---
 
 > [!note] Summary
@@ -63,7 +63,7 @@ task: "[[결제-흐름-개선]]"
 ---
 created: 2026-02-27
 tags:
-  - caching
+  - testing
 ---
 
 > [!note] Summary
@@ -74,9 +74,9 @@ tags:
 
 ### 태그 규칙
 - 구조화된 메타데이터(폴더 경로, frontmatter 필드)와 중복되는 태그는 달지 않는다
-  - 예: `project: order-api`가 있는데 `order-api` 태그 ❌
+  - 예: `project: user-api`가 있는데 `user-api` 태그 ❌
 - daybook 섹션 파일은 날짜 폴더 안에 있어 주제 분류가 없으므로, 주제 태그가 유일한 구조화된 분류 수단이다
-  - 예: `Redis 캐시 만료 정책 비교.md` → `tags: - redis` ✅
+  - 예: `로그 레벨 설정 기준 정리.md` → `tags: - logging` ✅
 - 인라인 태그(`#태그`)는 사용하지 않는다 — frontmatter `tags`로 일원화
 
 ## Summary 콜아웃
