@@ -4,6 +4,7 @@ description: >
   Create or update knowledge notes for dev concepts and technical topics.
   Trigger on "library", "what is this", "explain this concept", "take notes",
   or when user learns something new during conversation.
+allowed-tools: Read, Write, Edit, Glob, Grep, WebSearch, WebFetch
 ---
 
 # Library
@@ -45,12 +46,6 @@ daybook은 경험 중심, library는 개념 중심.
 
 references/rules.md의 템플릿과 규칙에 따라 문서를 작성한다.
 
-**작성 직전 체크 — rules.md를 읽었더라도, 아래 규칙을 작성 시점에 다시 확인한다:**
-- 다이어그램/흐름도 → Mermaid 코드블록 사용 (ASCII art 금지)
-- 추상적 설명 → 구체적 예시(시나리오, before/after, 비교 다이어그램) 필수
-- 코드 예시 → 핵심만 보여주는 최소한으로
-- frontmatter → aliases만 (tags, category 금지)
-
 **새 문서 생성 시:**
 - 디렉터리를 결정한다: 특정 기술에 속하면 기술명 디렉터리, 범용 개념이면 도메인 디렉터리
 - 기존 디렉터리가 없으면 생성
@@ -61,6 +56,8 @@ references/rules.md의 템플릿과 규칙에 따라 문서를 작성한다.
 - 기존 구조를 존중하면서 자연스럽게 통합
 
 ### Phase 4: 이해도 확인
+
+> `/library`로 수동 호출한 경우에만 실행한다. 자동 호출된 경우 Phase 4~5를 생략하고 문서 작성 결과만 보고한다.
 
 문서 작성 직후, 사용자가 내용을 제대로 이해했는지 단계적으로 확인한다.
 
@@ -92,12 +89,6 @@ references/rules.md의 템플릿과 규칙에 따라 문서를 작성한다.
 - **다음 학습 추천 내용을 문서의 `## 다음 학습` 섹션에도 기록한다** — 나중에 문서를 다시 볼 때 학습 경로를 이어갈 수 있게
 
 ## 판단 기준
-
-### 파일명
-
-디렉터리가 기술 맥락을 제공하므로, 파일명에 기술 접두사를 붙이지 않는다.
-- 좋은 예: `JPA/@Modifying.md`, `PostgreSQL/VACUUM.md`, `design/YAGNI.md`
-- 나쁜 예: `JPA/JPA-Modifying.md`, `어노테이션 정리.md`
 
 ### 새 문서 vs 기존 문서 수정
 
