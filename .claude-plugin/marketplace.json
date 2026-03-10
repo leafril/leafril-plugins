@@ -7,7 +7,7 @@
     {
       "name": "note-plugins",
       "description": "Write and manage Engineering Daybook entries and knowledge notes (library)",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "source": "./plugins/note-plugins"
     },
     {
