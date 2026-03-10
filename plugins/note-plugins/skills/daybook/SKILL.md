@@ -4,6 +4,7 @@ description: >
   Write engineering daybook entries — decisions, problem-solving, TILs, and insights
   as structured daily markdown notes. Trigger on "daybook", "record this", "log this",
   "TIL", or intent to capture dev experiences for future reference.
+allowed-tools: Read, Write, Edit, Glob, Grep
 ---
 
 # Daybook
@@ -31,8 +32,9 @@ daybook은 기록의 질이 핵심이다. 사용자가 전달한 내용이 "왜 
 **바로 작성해도 되는 경우:**
 - 사용자가 기록할 내용의 배경, 판단 근거, 결론까지 이미 충분히 전달한 경우
 - 사용자가 파일 경로를 지정하며 내용 추가만 요청한 경우
+- 자동 호출된 경우: 대화 히스토리에서 배경·판단·결론을 이미 파악할 수 있으면 바로 작성을 제안한다
 
-**대화가 필요한 경우 (대부분 여기에 해당):**
+**대화가 필요한 경우 (수동 호출 시 대부분 여기에 해당):**
 - 사용자가 "이거 기록해줘" 수준의 짧은 요청만 한 경우
 - 무엇을 했는지는 알겠지만 왜 그렇게 했는지가 빠진 경우
 - 대화 히스토리에서 맥락을 파악할 수 있지만, 사용자가 무엇을 기록하고 싶은지 명확하지 않은 경우
