@@ -3,7 +3,7 @@ name: create-branch
 description: |
   작업 시작 전 개발 브랜치 최신화 및 새 브랜치 생성 자동화. CLAUDE.md에서 개발 브랜치와 브랜치 네이밍 컨벤션을 읽어 적용.
   수동 호출(/create-branch) 전용이며, 자동 트리거하지 않는다.
-arguments: "[base-branch] [ticket-number] [branch-name | 작업 설명]"
+arguments: "<base-branch> <ticket-number> <branch-name | 작업 설명>"
 ---
 
 # 작업 브랜치 생성
