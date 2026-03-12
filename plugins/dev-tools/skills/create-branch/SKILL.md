@@ -3,6 +3,7 @@ name: create-branch
 description: |
   작업 시작 전 개발 브랜치 최신화 및 새 브랜치 생성 자동화. CLAUDE.md에서 개발 브랜치와 브랜치 네이밍 컨벤션을 읽어 적용.
   수동 호출(/create-branch) 전용이며, 자동 트리거하지 않는다.
+arguments: "[base-branch] [ticket-number] [branch-name | 작업 설명]"
 ---
 
 # 작업 브랜치 생성
@@ -12,7 +13,31 @@ description: |
 
 ## When to Apply
 
-- 사용자가 `/create-branch` 또는 `/create-branch <branch-name>`을 실행했을 때
+- 사용자가 `/create-branch`를 실행했을 때
+
+## 인자 파싱
+
+인자는 순서 무관하게 아래 규칙으로 판별한다. 모든 인자는 선택 사항이며, 부족한 정보만 질문한다.
+
+| 조건 | 판별 |
+|------|------|
+| CLAUDE.md 개발 브랜치 목록에 포함 | base 브랜치 |
+| 숫자만으로 구성 (예: `3064`) | 티켓 번호 |
+| 슬래시(`/`)를 포함하고 영문+숫자+하이픈으로 구성 | 브랜치명 |
+| 위 조건에 해당하지 않음 | 작업 설명 |
+
+### 작업 설명 → 브랜치명 자동 생성
+
+작업 설명이 주어지면 CLAUDE.md의 네이밍 컨벤션에 따라 브랜치명을 자동 생성한다.
+
+1. 작업 설명에서 타입을 추론한다
+   - "수정", "버그", "문제" → `fix`
+   - "추가", "구현", "생성" → `feat`
+   - "정리", "설정", "업데이트" → `chore`
+   - "리팩토링", "개선" → `refactor`
+2. 설명을 kebab-case 영문으로 변환한다
+3. 티켓 번호가 컨벤션에 필요하지만 인자에 없으면 질문한다
+4. 생성한 브랜치명을 사용자에게 확인받는다 — 자동 변환은 의도와 다를 수 있으므로
 
 ## 실행 흐름
 
@@ -39,37 +64,10 @@ CLAUDE.md에 개발 브랜치 정보가 없습니다.
 답변 후 CLAUDE.md에 추가해두시면 다음부터 자동으로 적용됩니다.
 ```
 
-### Step 2: 사용자 입력 수집
+### Step 2: 인자 파싱 및 사용자 입력 수집
 
-인자로 브랜치명이 전달되었으면 이 단계를 건너뛴다.
-
-다음 정보를 사용자에게 질문한다:
-
-1. **브랜치명** (컨벤션이 있으면 예시와 함께 안내)
-2. **base 브랜치** (개발 브랜치가 여러 개인 경우에만)
-
-#### 질문 형식 예시
-
-```
-브랜치를 생성합니다.
-
-- Base 브랜치: `develop`
-- 네이밍 컨벤션: `feature/설명`
-
-브랜치명을 알려주세요. (예: feature/login-page)
-```
-
-개발 브랜치가 여러 개인 경우:
-
-```
-브랜치를 생성합니다.
-
-- 개발 브랜치 목록: `dev-web`, `dev-app`, `dev-admin`
-- 네이밍 컨벤션: `{타입}/{설명}`
-
-1. Base 브랜치를 선택해주세요.
-2. 브랜치명을 알려주세요. (예: feat/new-feature)
-```
+인자를 위의 판별 규칙에 따라 파싱한다. 부족한 정보만 질문한다.
+개발 브랜치가 1개면 base는 자동 선택한다.
 
 ### Step 3: 개발 브랜치 최신화
 
@@ -130,7 +128,7 @@ git checkout -b {새-브랜치명}
 
 ## 전체 예시
 
-### 예시 1: 단일 개발 브랜치
+### 예시 1: 인자 없음
 
 ```
 사용자: /create-branch
@@ -150,35 +148,53 @@ Claude: (git checkout develop && git pull && git checkout -b feature/user-profil
 - Branch: `feature/user-profile`
 ```
 
-### 예시 2: 인자로 브랜치명 전달
+### 예시 2: base + 티켓 번호 + 작업 설명 (질문 없이 진행)
 
 ```
-사용자: /create-branch feature/login-page
-
-Claude: (git checkout develop && git pull && git checkout -b feature/login-page)
-
-브랜치 생성 완료!
-- Base: `develop` (최신화 완료)
-- Branch: `feature/login-page`
-```
-
-### 예시 3: 여러 개발 브랜치
-
-```
-사용자: /create-branch
+사용자: /create-branch dev-web 3064 효과음 딜레이 수정
 
 Claude: 브랜치를 생성합니다.
-- 개발 브랜치 목록: `dev-web`, `dev-app`, `dev-admin`
-- 네이밍 컨벤션: `{타입}/{설명}`
+- Base: `dev-web`
+- Branch: `JIRA-3064/fix/sound-effect-delay`
 
-1. Base 브랜치를 선택해주세요.
-2. 브랜치명을 알려주세요.
+이대로 진행할까요?
 
-사용자: dev-web, feat/user-settings
+사용자: ㅇㅇ
 
-Claude: (git checkout dev-web && git pull && git checkout -b feat/user-settings)
+Claude: (git checkout dev-web && git pull && git checkout -b JIRA-3064/fix/sound-effect-delay)
 
 브랜치 생성 완료!
 - Base: `dev-web` (최신화 완료)
-- Branch: `feat/user-settings`
+- Branch: `JIRA-3064/fix/sound-effect-delay`
+```
+
+### 예시 3: base + 브랜치명 (즉시 진행)
+
+```
+사용자: /create-branch dev-app feature/user-settings
+
+Claude: (git checkout dev-app && git pull && git checkout -b feature/user-settings)
+
+브랜치 생성 완료!
+- Base: `dev-app` (최신화 완료)
+- Branch: `feature/user-settings`
+```
+
+### 예시 4: 작업 설명만 (부족한 정보 질문)
+
+```
+사용자: /create-branch 로그인 페이지 추가
+
+Claude: 브랜치를 생성합니다.
+- 개발 브랜치 목록: `dev-web`, `dev-app`
+
+Base 브랜치를 선택해주세요.
+
+사용자: dev-web
+
+Claude: 브랜치를 생성합니다.
+- Base: `dev-web`
+- Branch: `feat/login-page`
+
+이대로 진행할까요?
 ```
