@@ -149,15 +149,19 @@ SELECT table_name FROM information_schema.tables WHERE table_schema = 'SCHEMA' O
 | 별칭 없음 + config에 호스트 1개 | 그 호스트 사용 |
 | 별칭 없음 + config에 호스트 2개 이상 | 사용자에게 선택 표시 |
 
-호스트가 2개 이상일 때 선택 표시 형식:
+호스트가 2개 이상일 때 `AskUserQuestion` 도구로 선택지를 표시한다:
 
 ```
-어떤 호스트에서 조회할까요?
-1. postgresql-dev (default)
-2. mysql-prod
+AskUserQuestion:
+  question: "어떤 호스트에서 조회할까요?"
+  options:
+    - label: "postgresql-dev"
+      description: "PostgreSQL Dev (default)"
+    - label: "mysql-prod"
+      description: "MySQL Prod"
 ```
 
-`default`로 지정된 호스트에 표시를 붙여 사용자가 빠르게 선택할 수 있게 한다. 선택 후 database, default_schema는 config에 지정된 값을 그대로 사용한다.
+config의 `databases` 키를 `label`로, engine과 default 여부를 `description`에 표시한다. 선택 후 database, default_schema는 config에 지정된 값을 그대로 사용한다.
 
 #### 스키마 선택
 
