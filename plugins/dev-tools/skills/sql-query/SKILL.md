@@ -139,16 +139,35 @@ SELECT table_name FROM information_schema.tables WHERE table_schema = 'SCHEMA' O
 
 자연어에서 쿼리를 생성한 후 사용자가 수정을 요청하면 쿼리를 재생성하여 다시 보여준다. 사용자가 승인할 때까지 이 과정을 반복한다.
 
-### Step 4: DB·스키마 선택
+### Step 4: 호스트·스키마 선택
 
-- **DB**: Step 2에서 별칭이 파싱되었으면 해당 DB, 아니면 config의 `default` DB 사용
-- **스키마**: `--schema` 지정 있으면 해당 스키마, 없으면 config의 `default_schema` 사용. 쿼리 내 `schema.table` 형태로 명시된 경우 그대로 사용
+#### 호스트 선택
+
+| 조건 | 동작 |
+|------|------|
+| Step 2에서 별칭이 파싱됨 | 해당 호스트 사용 |
+| 별칭 없음 + config에 호스트 1개 | 그 호스트 사용 |
+| 별칭 없음 + config에 호스트 2개 이상 | 사용자에게 선택 표시 |
+
+호스트가 2개 이상일 때 선택 표시 형식:
+
+```
+어떤 호스트에서 조회할까요?
+1. postgresql-dev (default)
+2. mysql-prod
+```
+
+`default`로 지정된 호스트에 표시를 붙여 사용자가 빠르게 선택할 수 있게 한다. 선택 후 database, default_schema는 config에 지정된 값을 그대로 사용한다.
+
+#### 스키마 선택
+
+`--schema` 지정 있으면 해당 스키마, 없으면 config의 `default_schema` 사용. 쿼리 내 `schema.table` 형태로 명시된 경우 그대로 사용.
 
 #### 테이블을 찾지 못한 경우
 
-기본 DB에서 테이블을 찾지 못하면, config의 **다른 DB에서 순차 탐색**한다:
+선택된 DB에서 테이블을 찾지 못하면, config의 **다른 DB에서 순차 탐색**한다:
 
-1. 기본 DB의 `default_schema`에서 메타쿼리로 테이블 검색
+1. 선택된 DB의 `default_schema`에서 메타쿼리로 테이블 검색
 2. 없으면 → config의 다른 DB에서 동일하게 검색
 3. 모든 DB에서 못 찾으면 → 사용자에게 DB와 테이블명 질문
 
