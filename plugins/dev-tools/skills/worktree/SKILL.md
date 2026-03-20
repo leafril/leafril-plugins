@@ -1,147 +1,232 @@
 ---
 name: worktree
 description: |
-  Git worktree를 프로젝트 형제 디렉토리에 생성하거나 삭제하는 스킬.
-  사용자가 "worktree 만들어", "워크트리 생성", "별도 디렉토리에서 작업하고 싶어", "worktree 삭제", "워크트리 정리" 등을 말할 때 트리거한다.
-  빌트인 EnterWorktree는 프로젝트 내부(.claude/worktrees/)에 생성하여 git staged 영역이 오염되는 문제가 있으므로, 이 스킬을 대신 사용한다.
-  /worktree <suffix> 형태로 호출하면 worktree를 생성하고, /worktree remove <suffix> 형태로 호출하면 삭제한다.
+  Create or delete git worktrees as subdirectories of a bare-repo root.
+  Triggers on: "worktree 만들어", "워크트리 생성", "create worktree", "worktree 삭제", "워크트리 정리", "remove worktree", etc.
+  Use this instead of the built-in EnterWorktree, which creates worktrees inside .claude/worktrees/ and pollutes the git staged area.
+  /worktree <suffix> to create, /worktree remove <suffix> to delete, /worktree list to show all.
+allowed-tools:
+  - Bash
+  - AskUserQuestion
+  - Read
+  - Glob
+argument-hint: "<suffix> [--from <branch>] | remove <suffix> | list"
 ---
 
-# Git Worktree 스킬
+# Git Worktree Skill
 
-프로젝트 **형제 디렉토리**에 git worktree를 생성/삭제한다. 프로젝트 내부가 아닌 바깥에 만들어서 git staged 영역 오염 문제를 방지한다.
+Create and delete git worktrees as **nested subdirectories** within a bare-repo project structure.
 
-## 생성 워크플로우
+## Project Structure
 
-### Step 1: 사용자 입력 파싱
+This skill assumes a bare-repo + nested worktree layout:
 
-사용자 입력에서 아래 정보를 추출한다:
-- **suffix** (필수): worktree 디렉토리 이름에 붙을 접미사
-- **브랜치명** (선택): 없으면 Step 2에서 질문
-- **기반 브랜치** (선택): 없으면 `origin/develop` 사용. `--from <branch>` 또는 `--from current`로 지정 가능
+```
+{bare-repo-root}/
+├── .bare/               # actual bare repo
+├── .git                 # file: gitdir: ./.bare
+├── {suffix-a}/          # worktree
+└── {suffix-b}/          # worktree
+```
 
-### Step 2: 누락 정보 질문
+## Argument Parsing
 
-브랜치명이 없으면 사용자에게 질문한다:
-> "브랜치명을 입력해주세요. (예: fix/APP-1234/login-error)"
+Parse `$ARGUMENTS` to determine the action:
 
-suffix와 브랜치명이 모두 있으면 바로 Step 3으로 진행한다.
+| Pattern | Action |
+|---------|--------|
+| `remove <suffix>` | Delete workflow |
+| `list` or empty | List worktrees |
+| `<suffix>` | Create workflow |
+| `<suffix> --from <branch>` | Create workflow with custom base branch |
+| `<suffix> <branch-name>` | Create workflow with suffix and branch name |
+| `<suffix> <branch-name> --from <branch>` | Create with all specified |
 
-### Step 3: 경로 계산 및 검증
+**Parsing rules:**
+- First token: if `remove` → delete mode. If `list` → list mode. Otherwise → create mode, first token is suffix.
+- `--from` flag: the next token after `--from` is the base branch. `--from current` means use HEAD.
+- Remaining positional token (after suffix, before `--from`): branch name.
 
-- worktree 경로: `{메인프로젝트경로}-{suffix}`
-  - 예: 메인이 `/path/to/my-project`이면 → `/path/to/my-project-{suffix}`
-- 해당 경로가 이미 존재하면 에러 메시지 출력 후 **중단**
+## Auto-trigger vs Manual Invocation
 
-### Step 4: worktree 생성
+- **Manual** (`/worktree <args>`): proceed directly with parsed arguments.
+- **Auto-trigger** (user says "워크트리 만들어" etc. without `/worktree`): confirm intent with `AskUserQuestion` before proceeding, since the trigger phrase may be ambiguous.
+
+## Bare Repo Root Detection
+
+Walk up from the current working directory to find a directory containing `.bare/`.
+That directory is `{bare-repo-root}`.
+
+- If current directory contains `.bare/` → current directory is root
+- If current directory is inside a worktree → parent directory is root (worktrees are direct children of root)
+- If multiple levels deep inside a worktree → keep walking up until `.bare/` is found
+
+If not found → print error and **abort**.
+
+**Why run commands from `{bare-repo-root}`?** The `.git` pointer file lives here. Git resolves the bare repo via this file, so all worktree management commands must execute from this directory to work correctly.
+
+## Create Workflow
+
+### Step 1: Parse Input
+
+Extract from `$ARGUMENTS`:
+- **suffix** (required): worktree directory name
+- **branch name** (optional): if missing, ask in Step 2
+- **base branch** (optional): defaults to `origin/develop`. Override with `--from <branch>` or `--from current`
+
+### Step 2: Ask for Missing Info
+
+If branch name is missing, use `AskUserQuestion`:
+- question: "Enter a branch name for this worktree."
+- Provide no options (free-text input via "Other")
+
+If both suffix and branch name are provided, skip to Step 3.
+
+### Step 3: Validate
+
+- Worktree path: `{bare-repo-root}/{suffix}`
+- **Path exists?** → print error and abort
+- **Suffix is reserved name?** (`.bare`, `.git`, `.DS_Store`) → print error and abort
+- **Branch already exists?** Run `git branch --list {branch-name}`. If exists → print error and abort. Suggest a different name or ask user to reuse with `git worktree add {suffix} {existing-branch}` (without `-b`).
+
+### Step 4: Create Worktree
 
 ```bash
+cd {bare-repo-root}
 git fetch origin
-git worktree add -b {브랜치명} {worktree경로} {기반브랜치}
+git worktree add -b {branch-name} {suffix} {base-branch}
 ```
 
-### Step 5: 작업 디렉토리 전환 및 안내
+**If `git fetch` fails** → warn user but continue (offline work is fine, base branch may be stale).
+**If `git worktree add` fails** → print the error message and abort. Common causes: branch already exists, base branch not found.
+
+### Step 5: Switch Directory and Confirm
 
 ```bash
-cd {worktree경로}
+cd {bare-repo-root}/{suffix}
 ```
 
-생성 완료 후 아래 정보를 출력한다:
-- worktree 경로
-- 생성된 브랜치명
-- 기반 브랜치
+**Why `cd` after creation?** The user's next commands should run inside the new worktree. Without `cd`, they'd still be in the bare-repo root or a different worktree.
 
-### 생성 예시
+Print after creation:
+- Worktree path
+- Created branch name
+- Base branch
 
-**입력**: `/worktree hotfix-login` (브랜치명 미지정)
+### Create Examples
 
-1. 브랜치명 질문 → 사용자: `fix/APP-1234/login-error`
-2. 경로 계산: `/path/to/my-project-hotfix-login`
-3. 실행:
+**Input**: `/worktree feat-login` (no branch name)
+
+1. AskUserQuestion → user enters: `plus/KIDS-2400/feat-login`
+2. Path: `{bare-repo-root}/feat-login`
+3. Run:
 ```bash
+cd {bare-repo-root}
 git fetch origin
-git worktree add -b fix/APP-1234/login-error \
-  /path/to/my-project-hotfix-login \
-  origin/develop
-cd /path/to/my-project-hotfix-login
+git worktree add -b plus/KIDS-2400/feat-login feat-login origin/develop
+cd {bare-repo-root}/feat-login
 ```
 
-**입력**: `/worktree hotfix-login --from current` (브랜치명 미지정, 현재 브랜치 기반)
+**Input**: `/worktree hotfix --from current` (no branch name, based on current branch)
 
-1. 브랜치명 질문 → 사용자: `fix/APP-1234/login-error`
-2. 기반 브랜치: 현재 체크아웃된 브랜치 (HEAD)
-3. 실행:
+1. AskUserQuestion → user enters: `fix/APP-100/null-pointer`
+2. Base branch: HEAD
+3. Run:
 ```bash
-git worktree add -b fix/APP-1234/login-error \
-  /path/to/my-project-hotfix-login \
-  HEAD
-cd /path/to/my-project-hotfix-login
+cd {bare-repo-root}
+git worktree add -b fix/APP-100/null-pointer hotfix HEAD
+cd {bare-repo-root}/hotfix
+```
+
+**Input**: `/worktree api-refactor shared/KIDS-1888/api-cleanup`
+
+1. Suffix: `api-refactor`, branch: `shared/KIDS-1888/api-cleanup` — all provided, skip to Step 3.
+2. Run:
+```bash
+cd {bare-repo-root}
+git fetch origin
+git worktree add -b shared/KIDS-1888/api-cleanup api-refactor origin/develop
+cd {bare-repo-root}/api-refactor
 ```
 
 ---
 
-## 삭제 워크플로우
+## Delete Workflow
 
-### Step 1: 대상 확인
+### Step 1: Verify Target
 
-- worktree 경로 계산: `{메인프로젝트경로}-{suffix}`
-- `git worktree list`로 존재 여부 확인
-- 존재하지 않으면 에러 메시지 출력 후 **중단**
+- Worktree path: `{bare-repo-root}/{suffix}`
+- Check existence with `git worktree list`
+- If not found → print error and **abort**
 
-### Step 2: uncommitted changes 확인
+### Step 2: Check for Uncommitted Changes
 
 ```bash
-cd {worktree경로} && git status --short
+cd {bare-repo-root}/{suffix} && git status --short
 ```
 
-변경사항이 있으면 사용자에게 경고하고 계속 진행할지 확인한다.
-변경사항이 없으면 바로 Step 3으로 진행한다.
+If changes exist → warn user with `AskUserQuestion`:
+- question: "This worktree has uncommitted changes. Continue deleting?"
+- options: "Yes, delete anyway" / "No, cancel"
 
-### Step 3: worktree 삭제
+If clean → proceed to Step 3.
+
+### Step 3: Remove Worktree
 
 ```bash
-git worktree remove {worktree경로}
+cd {bare-repo-root}
+git worktree remove {suffix}
 ```
 
-### Step 4: 브랜치 삭제 여부 확인
+### Step 4: Ask About Branch Deletion
 
-사용자에게 연결된 브랜치도 삭제할지 질문한다.
+Use `AskUserQuestion`:
+- question: "Also delete the branch `{branch-name}`?"
+- options: "Yes, delete branch" / "No, keep branch"
 
-- 삭제하겠다면: `git branch -D {브랜치명}`
-- 남기겠다면: 브랜치는 유지
+If yes: `git branch -D {branch-name}`
 
-### Step 5: 완료 안내
+### Step 5: Confirm
 
-삭제된 worktree 경로와 브랜치 삭제 여부를 출력한다.
+Print the removed worktree path and branch deletion result.
 
-### 삭제 예시
+### Delete Example
 
-**입력**: `/worktree remove hotfix-login`
+**Input**: `/worktree remove feat-login`
 
 ```bash
-# Step 1: 존재 확인
+# Step 1: Verify
+cd {bare-repo-root}
 git worktree list
 
-# Step 2: 변경사항 확인
-cd /path/to/my-project-hotfix-login && git status --short
+# Step 2: Check changes
+cd {bare-repo-root}/feat-login && git status --short
 
-# Step 3: 삭제
-git worktree remove /path/to/my-project-hotfix-login
+# Step 3: Remove
+cd {bare-repo-root}
+git worktree remove feat-login
 
-# Step 4: 브랜치 삭제 (사용자 확인 후)
-git branch -D fix/APP-1234/login-error
+# Step 4: Delete branch (after AskUserQuestion confirmation)
+git branch -D plus/KIDS-2400/feat-login
 ```
 
 ---
 
-## 목록 조회
+## List Worktrees
 
-사용자가 "worktree 목록", "워크트리 리스트"를 말하면 `git worktree list`를 실행하여 보여준다.
+When `$ARGUMENTS` is `list` or empty, or user says "worktree list", "워크트리 목록", run:
+
+```bash
+cd {bare-repo-root}
+git worktree list
+```
 
 ---
 
-## 주의사항
+## Important Rules
 
-- `EnterWorktree` 빌트인 도구를 사용하지 않는다. 프로젝트 내부에 worktree를 만들면 git staged 영역이 오염된다.
-- worktree 삭제 시 uncommitted changes 확인은 반드시 수행한다. 사용자의 작업물을 보호하는 것이 최우선이다.
-- worktree 생성 후 반드시 `cd`로 작업 디렉토리를 전환한다.
+- **Do NOT use the built-in `EnterWorktree` tool.** It creates worktrees inside `.claude/worktrees/`, which shares the git index with the main repo and pollutes the staged area.
+- **Always check for uncommitted changes before deleting.** Protecting user work is the top priority.
+- **Always `cd` into the worktree after creation** so subsequent commands run in the correct context.
+- **All git commands run from `{bare-repo-root}`** because the `.git` pointer file that resolves to `.bare/` lives there.
+- **Never create a worktree named `.bare`, `.git`, or other dotfiles** — these conflict with the bare-repo structure.
