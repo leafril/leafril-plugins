@@ -4,7 +4,7 @@ Claude Code plugin marketplace for developer productivity and knowledge manageme
 
 ## Plugins
 
-### dev-tools (v1.7.1)
+### dev-tools (v1.7.2)
 
 Developer productivity tools for git workflow, project management, and skill evaluation.
 
@@ -16,7 +16,7 @@ Developer productivity tools for git workflow, project management, and skill eva
 | plugin-update | `/plugin-update` | 플러그인 변경사항 원본 저장소 동기화, 버전 업데이트, push |
 | sql-query | `/sql-query` | SQL 조회 실행 — SELECT 쿼리 생성·실행·결과 포맷팅 |
 | worktree | `/worktree` | Git worktree 생성/삭제 (bare-repo 하위 디렉토리) |
-| write-tests | `/write-tests` | Kotlin 테스트 작성/수정 |
+| eval-test | `/eval-test` | Kotlin 테스트 작성·실행·자가평가 검증 루프 |
 | write-wip | `/write-wip` | WIP 문서 생성/갱신/삭제로 세션 간 작업 상태 관리 |
 
 ### note-plugins (v1.3.1)

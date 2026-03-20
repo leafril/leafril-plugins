@@ -10,6 +10,10 @@ allowed-tools: Read, Grep, Glob
 
 ## Phase 1: 스킬 읽기
 
+`$ARGUMENTS` 처리:
+- 스킬 이름이면 같은 플러그인의 `skills/{이름}/skill.md`에서 탐색한다
+- 경로면 해당 경로를 직접 읽는다
+
 1. 대상 스킬의 SKILL.md를 읽는다
 2. references/ 등 참조 파일이 있으면 모두 읽는다
 3. 전체 줄 수를 파악한다
@@ -17,6 +21,8 @@ allowed-tools: Read, Grep, Glob
 ## Phase 2: 구조 평가
 
 [checklist.md](references/checklist.md)의 체크리스트를 하나씩 판정한다. 각 항목에 O/X/해당없음을 매긴다.
+
+워크플로우 섹션(#22~25)은 스킬에 워크플로우가 없으면 모두 해당없음으로 판정한다.
 
 ## Phase 3: 내용 평가
 
