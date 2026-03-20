@@ -4,7 +4,7 @@ Claude Code plugin marketplace for developer productivity and knowledge manageme
 
 ## Plugins
 
-### dev-tools (v1.7.2)
+### dev-tools (v1.7.3)
 
 Developer productivity tools for git workflow, project management, and skill evaluation.
 
