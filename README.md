@@ -19,7 +19,7 @@ Developer productivity tools for git workflow, project management, and skill eva
 | eval-test | `/eval-test` | Kotlin 테스트 작성·실행·자가평가 검증 루프 |
 | write-wip | `/write-wip` | WIP 문서 생성/갱신/삭제로 세션 간 작업 상태 관리 |
 
-### note-plugins (v1.3.1)
+### note-plugins (v1.3.2)
 
 Engineering daybook entries, knowledge notes, and English study logs.
 
