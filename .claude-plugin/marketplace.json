@@ -13,7 +13,7 @@
     {
       "name": "dev-tools",
       "description": "Developer productivity tools for git workflow, project management, and skill evaluation",
-      "version": "1.7.3",
+      "version": "1.8.0",
       "source": "./plugins/dev-tools"
     }
   ]
