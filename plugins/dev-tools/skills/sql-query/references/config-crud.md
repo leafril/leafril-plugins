@@ -1,5 +1,9 @@
 # Config CRUD 흐름
 
+- Config 생성 흐름 — AskUserQuestion으로 engine → host → port → user → database → 별칭 순서 수집
+- Config 수정 흐름 — 대상 선택 → 항목 선택 → 새 값 입력
+- Config 삭제 흐름 — 대상 선택 → 제거 + default 정리
+
 ## Config 생성 흐름
 
 config 파일이 없거나 사용자가 새 DB 추가를 요청한 경우, `AskUserQuestion`으로 단계별 수집한다:

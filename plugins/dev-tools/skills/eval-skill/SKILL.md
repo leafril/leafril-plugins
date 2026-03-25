@@ -2,20 +2,20 @@
 name: eval-skill
 description: Evaluate a skill's structure and content against best practices. Use when reviewing, auditing, or improving an existing skill's SKILL.md and references.
 disable-model-invocation: true
-argument-hint: "[test-prompts?] [스킬 경로 또는 이름]"
+argument-hint: "[test?] [스킬 경로 또는 이름]"
 allowed-tools: Read, Grep, Glob
 ---
 
 지정된 스킬의 SKILL.md와 참조 파일을 읽고 평가한다. 두 가지 모드가 있다:
 
 - **평가 모드** (기본): `/eval-skill <스킬>` → 구조·내용 평가 보고서 출력
-- **테스트 프롬프트 모드**: `/eval-skill test-prompts <스킬>` → 개선 검증용 테스트 프롬프트만 생성
+- **테스트 프롬프트 모드**: `/eval-skill test <스킬>` → 개선 검증용 테스트 프롬프트만 생성
 
-`$ARGUMENTS[0]`이 `test-prompts`이면 테스트 프롬프트 모드. 그 외에는 평가 모드.
+`$ARGUMENTS[0]`이 `test`이면 테스트 프롬프트 모드. 그 외에는 평가 모드.
 
 ## Phase 1: 스킬 읽기
 
-`$ARGUMENTS` 처리 (`test-prompts` 접두사가 있으면 제거한 나머지를 스킬 경로로 사용):
+`$ARGUMENTS` 처리 (`test` 접두사가 있으면 제거한 나머지를 스킬 경로로 사용):
 - 스킬 이름이면 같은 플러그인의 `skills/{이름}/skill.md`에서 탐색한다
 - 경로면 해당 경로를 직접 읽는다
 
@@ -43,7 +43,7 @@ allowed-tools: Read, Grep, Glob
 
 ## Phase 4: 테스트 프롬프트 생성 (테스트 프롬프트 모드 전용)
 
-**평가 모드에서는 이 Phase를 건너뛴다.** 테스트 프롬프트 모드(`/eval-skill test-prompts <스킬>`)에서만 실행한다.
+**평가 모드에서는 이 Phase를 건너뛴다.** 테스트 프롬프트 모드(`/eval-skill test <스킬>`)에서만 실행한다.
 
 Phase 1~3을 내부적으로 실행하여 개선 우선순위를 파악한 뒤, 각 개선 항목별로 검증 프롬프트를 생성한다. 구조·내용 평가 보고서는 출력하지 않고 테스트 프롬프트만 출력한다.
 
@@ -93,4 +93,4 @@ Phase 1~3을 내부적으로 실행하여 개선 우선순위를 파악한 뒤, 
 2. ...
 ```
 
-테스트 프롬프트가 필요하면 `/eval-skill test-prompts <스킬>`로 별도 생성한다.
+테스트 프롬프트가 필요하면 `/eval-skill test <스킬>`로 별도 생성한다.
