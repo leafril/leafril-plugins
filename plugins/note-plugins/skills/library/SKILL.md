@@ -4,7 +4,8 @@ description: >
   Create or update knowledge notes for dev concepts and technical topics.
   Trigger on "library", "what is this", "explain this concept", "take notes",
   or when user learns something new during conversation.
-allowed-tools: Read, Write, Edit, Glob, Grep, WebSearch, WebFetch
+allowed-tools: Read, Write, Edit, Glob, Grep, WebSearch, WebFetch, AskUserQuestion
+argument-hint: concept or topic to learn
 ---
 
 # Library
@@ -29,7 +30,7 @@ daybook은 경험 중심, library는 개념 중심.
 
 ### Phase 1: 주제 파악
 
-1. 사용자가 전달한 내용에서 핵심 개념을 파악한다
+1. `$ARGUMENTS`에서 핵심 개념을 파악한다
 2. 기존 library에 같은 주제의 문서가 있는지 확인한다
    - 있으면 → 기존 문서를 읽고, 새 내용을 추가/수정
    - 없으면 → 새 문서 생성
@@ -54,6 +55,19 @@ references/rules.md의 템플릿과 규칙에 따라 문서를 작성한다.
 **기존 문서 수정 시:**
 - 새 섹션 추가 또는 기존 내용 보강
 - 기존 구조를 존중하면서 자연스럽게 통합
+
+### Phase 3.5: 자가 검증
+
+문서 작성 직후, rules.md의 핵심 규칙을 대조하여 검증한다. 작성한 문서를 다시 읽고 아래를 하나씩 확인한다:
+
+1. 문서에 등장하는 용어 중 독자가 모를 수 있는 것이 있는가? → 있으면 용어 정리 표 추가
+2. "왜 필요한가"부터 코드 예제까지 하나의 시나리오로 관통하는가?
+3. 코드에 각 줄이 뭘 하는지 주석이 있는가?
+4. 코드 아래에 흐름을 풀어서 설명하는 산문이 있는가?
+5. 함정 섹션에 "왜 이런 일이 생기는가" 원인이 있는가?
+6. 한 줄 요약에 전문 용어가 정의 없이 등장하지 않는가?
+
+위반 항목이 있으면 문서를 수정한 뒤 다음 Phase로 넘어간다.
 
 ### Phase 4: 이해도 확인
 
@@ -85,7 +99,7 @@ references/rules.md의 템플릿과 규칙에 따라 문서를 작성한다.
 
 - 문서 본문에서 설명 없이 등장한 용어나, "함정"에서 언급만 한 개념을 우선 추천
 - 각 추천에 왜 다음에 배우면 좋은지 한 줄 이유를 붙인다
-- 사용자가 골라서 이어갈 수 있게 선택지로 제시
+- AskUserQuestion의 `options` 파라미터로 선택지를 제시한다
 - **다음 학습 추천 내용을 문서의 `## 다음 학습` 섹션에도 기록한다** — 나중에 문서를 다시 볼 때 학습 경로를 이어갈 수 있게
 
 ## 판단 기준
