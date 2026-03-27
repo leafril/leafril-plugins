@@ -218,9 +218,24 @@ AskUserQuestion:
 
 캐시에서 테이블 목록과 설명을 로드하고 (캐시 미스 시 DB 조회 → 캐시 저장), 설명 우선으로 매칭한다. 후보가 2개 이상이면 `AskUserQuestion`으로 해소한다. 매칭 규칙, 모호한 매칭 해소, 경계 사례는 [cache.md](references/cache.md) "테이블 매칭 규칙" 참조.
 
-##### 쿼리 수정 루프
+##### 쿼리 확인 및 수정 루프
 
-자연어에서 쿼리를 생성한 후 사용자가 수정을 요청하면 쿼리를 재생성하여 다시 보여준다. 사용자가 승인할 때까지 이 과정을 반복한다.
+자연어에서 쿼리를 생성한 후 `AskUserQuestion`으로 실행 여부를 확인한다. 생성된 쿼리를 텍스트로 표시한 뒤 아래와 같이 질문한다:
+
+```
+AskUserQuestion:
+  question: "이 쿼리를 실행할까요?"
+  header: "쿼리 확인"
+  options:
+    - label: "실행"
+      description: "위 쿼리를 그대로 실행"
+    - label: "취소"
+      description: "쿼리를 실행하지 않고 중단"
+```
+
+- **"실행"** 선택 → Step 5로 진행
+- **"취소"** 선택 → 중단
+- **"Other"** (자동 제공) → 사용자가 수정 사항을 자유 입력 (예: "7일 이내만", "LIMIT 10으로 줄여줘", "status 조건 빼줘") → 쿼리 재생성 → 다시 `AskUserQuestion`으로 확인. 승인될 때까지 반복
 
 쿼리 과정에서 사용자가 테이블 역할을 언급하면 캐시 설명을 자동 업데이트한다 (상세: [cache.md](references/cache.md) "설명 자동 업데이트" 참조).
 
@@ -261,20 +276,22 @@ AskUserQuestion:
 ## 5. 사용 예시 (기본)
 
 ```
-# 자연어 → 쿼리 생성 → 확인 → 실행
+# 자연어 → 쿼리 생성 → AskUserQuestion 확인 → 실행
 사용자: users 테이블에서 status가 active인 것만 조회
-Claude: 다음 쿼리를 실행할까요?
-        SELECT * FROM users WHERE status = 'active' LIMIT 100;
-사용자: ㅇㅇ
+Claude: SELECT * FROM users WHERE status = 'active' LIMIT 100;
+        (AskUserQuestion: "이 쿼리를 실행할까요?" → 실행 / 취소)
+사용자: [실행 선택]
 Claude: (결과 출력)
 
-# 자연어 → 쿼리 생성 → 수정 → 재생성
+# 자연어 → 쿼리 생성 → Other로 수정 → 재생성
 사용자: orders 테이블에서 최근 주문 조회
-Claude: 다음 쿼리를 실행할까요?
-        SELECT * FROM orders ORDER BY created_at DESC LIMIT 100;
-사용자: 7일 이내만
-Claude: 다음 쿼리를 실행할까요?
-        SELECT * FROM orders WHERE created_at >= NOW() - INTERVAL '7 days' ORDER BY created_at DESC LIMIT 100;
+Claude: SELECT * FROM orders ORDER BY created_at DESC LIMIT 100;
+        (AskUserQuestion: "이 쿼리를 실행할까요?" → 실행 / 취소)
+사용자: [Other: "7일 이내만"]
+Claude: SELECT * FROM orders WHERE created_at >= NOW() - INTERVAL '7 days' ORDER BY created_at DESC LIMIT 100;
+        (AskUserQuestion: "이 쿼리를 실행할까요?" → 실행 / 취소)
+사용자: [실행 선택]
+Claude: (결과 출력)
 
 # SQL 직접 제공 → 확인 생략
 사용자: SELECT count(*) FROM orders;
@@ -287,8 +304,8 @@ Claude: (결과 출력)
 사용자: /sql users 조회
 Claude: (AskUserQuestion으로 스키마 선택지 표시)
         → 사용자가 "domain" 선택
-Claude: 다음 쿼리를 실행할까요?
-        SELECT * FROM domain.users LIMIT 100;
+Claude: SELECT * FROM domain.users LIMIT 100;
+        (AskUserQuestion: "이 쿼리를 실행할까요?" → 실행 / 취소)
 
 # 스키마 명시 지정
 사용자: /sql --schema=public activity_report 조회
@@ -318,8 +335,8 @@ Claude: mysql-dev 캐시를 갱신합니다...
 Claude: "사용자"에 해당하는 테이블이 어느 쪽인가요?
         (AskUserQuestion: users vs accounts)
 사용자: users
-Claude: 다음 쿼리를 실행할까요?
-        SELECT * FROM public.users LIMIT 100;
+Claude: SELECT * FROM public.users LIMIT 100;
+        (AskUserQuestion: "이 쿼리를 실행할까요?" → 실행 / 취소)
         (캐시 업데이트: users="사용자", accounts="사용자 아님")
 
 # 유사 이름 테이블 → 질문 → 캐시 자동 업데이트
@@ -327,8 +344,8 @@ Claude: 다음 쿼리를 실행할까요?
 Claude: "스캔"에 해당하는 테이블이 어느 쪽인가요?
         (AskUserQuestion: scan vs scan_result vs scan_image)
 사용자: scan_result
-Claude: 다음 쿼리를 실행할까요?
-        SELECT * FROM public.scan_result WHERE order_id IS NOT NULL LIMIT 100;
+Claude: SELECT * FROM public.scan_result WHERE order_id IS NOT NULL LIMIT 100;
+        (AskUserQuestion: "이 쿼리를 실행할까요?" → 실행 / 취소)
         (캐시 업데이트: scan_result="주문별 스캔 결과")
 
 # 사용자 피드백 → 캐시 자동 업데이트
@@ -337,9 +354,9 @@ Claude: 캐시에 반영했습니다: accounts = "미사용 (레거시)"
 
 # 캐시 덕분에 즉시 매칭 (다음 세션에서도 유지)
 사용자: /sql 사용자 목록 조회
-Claude: 다음 쿼리를 실행할까요?
-        SELECT * FROM public.users LIMIT 100;
-        (캐시에 users="사용자"가 있으므로 질문 없이 바로 매칭)
+Claude: SELECT * FROM public.users LIMIT 100;
+        (AskUserQuestion: "이 쿼리를 실행할까요?" → 실행 / 취소)
+        (캐시에 users="사용자"가 있으므로 테이블 질문 없이 바로 매칭)
 ```
 
 ## 7. 에러 처리
