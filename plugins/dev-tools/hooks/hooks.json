@@ -1,5 +1,4 @@
 {
-  "description": "Post-commit hook that triggers progress.md creation/update via the progress skill",
   "hooks": {
     "PostToolUse": [
       {
@@ -7,8 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/post-commit.sh\"",
-            "timeout": 5
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-commit.sh",
+            "timeout": 600
           }
         ]
       }
