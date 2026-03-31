@@ -5,7 +5,7 @@ description: >
   commit hook에서 호출되어 세션의 작업 진행 상황을 기록한다.
   progress.json이 없으면 생성하고, 기능이 완료되면 정리를 제안한다.
   수동 호출(/progress) 시 현재 진행 상황을 요약 보고한다.
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools:
   - Read
   - Write
