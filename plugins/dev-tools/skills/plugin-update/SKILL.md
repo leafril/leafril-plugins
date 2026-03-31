@@ -27,6 +27,7 @@ argument-hint: "[readme]"
 | 캐시 | 원본 저장소 |
 |---|---|
 | `cache/{플러그인}/{버전}/skills/` | `plugins/{플러그인}/skills/` |
+| `cache/{플러그인}/{버전}/hooks/` | `plugins/{플러그인}/hooks/` |
 | `cache/{플러그인}/{버전}/.claude-plugin/plugin.json` | `plugins/{플러그인}/.claude-plugin/plugin.json` |
 | — | `.claude-plugin/marketplace.json` (버전 필드만 업데이트) |
 
@@ -34,7 +35,7 @@ argument-hint: "[readme]"
 
 ### Step 1: 변경된 플러그인 파악
 
-각 플러그인의 최신 버전 디렉터리(가장 높은 버전)에서 스킬 파일들을 원본 저장소의 대응 파일과 `diff`로 비교한다. 변경된 파일 목록과 **변경 방향**을 사용자에게 보여준다.
+각 플러그인의 최신 버전 디렉터리(가장 높은 버전)에서 스킬 파일과 hooks 파일을 원본 저장소의 대응 파일과 `diff`로 비교한다. 변경된 파일 목록과 **변경 방향**을 사용자에게 보여준다.
 
 변경 방향 판단:
 - **캐시가 최신**: 캐시에만 변경이 있고 원본은 git clean → 캐시 → 원본 동기화 필요
