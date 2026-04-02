@@ -4,14 +4,13 @@ Claude Code plugin marketplace for developer productivity and knowledge manageme
 
 ## Plugins
 
-### dev-tools (v1.11.3)
+### dev-tools (v1.11.4)
 
 Developer productivity tools for git workflow, project management, and skill evaluation.
 
 | Skill | Command | Description |
 |---|---|---|
 | claude-md-audit | `/claude-md-audit` | CLAUDE.md 파일을 베스트 프랙티스 기반으로 감사·개선 |
-| create-branch | `/create-branch` | 개발 브랜치 최신화 및 새 브랜치 생성 자동화 |
 | eval-skill | `/eval-skill` | 스킬 구조·내용 평가 보고서 출력 |
 | eval-test | `/eval-test` | Kotlin 테스트 작성·실행·자가평가 검증 루프 |
 | plugin-update | `/plugin-update` | 플러그인 변경사항 원본 저장소 동기화, 버전 업데이트, push |
