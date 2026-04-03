@@ -113,6 +113,12 @@ README 구조:
 
 원본 저장소의 최신 파일을 기존 캐시 디렉터리에 덮어쓴다. `installed_plugins.json`의 `installPath`가 캐시 경로를 직접 참조하므로, 새 디렉터리를 만들지 않고 기존 경로를 유지해야 한다.
 
+IMPORTANT: skills뿐 아니라 hooks 디렉터리도 반드시 함께 복사해야 한다. 누락 시 PostToolUse hook이 동작하지 않는다.
+
+복사 대상:
+1. `plugins/{플러그인}/skills/` → `cache/{플러그인}/{버전}/skills/`
+2. `plugins/{플러그인}/hooks/` → `cache/{플러그인}/{버전}/hooks/` (hooks 디렉터리가 있는 경우)
+
 ### Step 8: 완료 안내
 
 업데이트된 플러그인명, 버전, push 결과를 출력한다.
