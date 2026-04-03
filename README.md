@@ -18,6 +18,12 @@ Developer productivity tools for git workflow, project management, and skill eva
 | sql | `/sql` | SQL 조회 실행 — 캐시 기반 테이블 매칭, 모호성 자동 해소, SELECT 쿼리 생성·실행 |
 | worktree | `/worktree` | Git worktree 생성/삭제 (bare-repo 하위 디렉토리) |
 
+**Hooks**
+
+| Hook | Trigger | Description |
+|---|---|---|
+| post-commit | `git commit` (PostToolUse) | 커밋 감지 시 `/progress` 스킬을 자동 실행하여 progress.json 갱신 |
+
 ### note-plugins (v1.3.5)
 
 Engineering daybook entries, knowledge notes, and English study logs.
