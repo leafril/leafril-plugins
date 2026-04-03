@@ -75,6 +75,8 @@ Step 1의 변경 방향에 따라 처리:
 정보 수집:
 - 각 `plugins/{플러그인}/.claude-plugin/plugin.json`에서 `name`, `description`, `version`
 - 각 `plugins/{플러그인}/skills/*/skill.md`의 frontmatter에서 `name`, `description` (첫 문장만 사용)
+- 각 `plugins/{플러그인}/hooks/hooks.json`에서 hook 정의 (있는 경우)
+- 각 `plugins/{플러그인}/hooks/*.sh`에서 hook 동작 설명 (stderr 메시지에서 추출)
 
 README 구조:
 ```
@@ -91,6 +93,13 @@ README 구조:
 | {스킬명} | `/{스킬명}` | {스킬 description 첫 문장} |
 ...
 
+**Hooks** (hooks 디렉터리가 있는 플러그인만)
+
+| Hook | Trigger | Description |
+|---|---|---|
+| {스크립트명} | {hooks.json의 matcher} | {hook 동작 설명} |
+```
+
 ## Installation
 (설치 안내)
 ```
@@ -98,6 +107,7 @@ README 구조:
 규칙:
 - 스킬은 알파벳순으로 정렬
 - description이 길면 첫 마침표(`. ` 또는 행 끝 `.`)까지만 사용한다. 테이블 셀의 가독성을 위해 1문장으로 제한.
+- hooks가 없는 플러그인은 **Hooks** 섹션을 생략한다
 - 기존 README의 헤더와 Installation 섹션은 유지, Plugins 섹션만 재생성
 - 생성 결과를 기존 README와 diff해서 실질 변경이 없으면 이 단계를 건너뛴다 (불필요한 커밋 방지)
 
