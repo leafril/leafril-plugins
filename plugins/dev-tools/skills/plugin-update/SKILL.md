@@ -27,6 +27,7 @@ argument-hint: "[readme]"
 | 캐시 | 원본 저장소 |
 |---|---|
 | `cache/{플러그인}/{버전}/skills/` | `plugins/{플러그인}/skills/` |
+| `cache/{플러그인}/{버전}/agents/` | `plugins/{플러그인}/agents/` |
 | `cache/{플러그인}/{버전}/hooks/` | `plugins/{플러그인}/hooks/` |
 | `cache/{플러그인}/{버전}/.claude-plugin/plugin.json` | `plugins/{플러그인}/.claude-plugin/plugin.json` |
 | — | `.claude-plugin/marketplace.json` (버전 필드만 업데이트) |
@@ -35,7 +36,7 @@ argument-hint: "[readme]"
 
 ### Step 1: 변경된 플러그인 파악
 
-각 플러그인의 최신 버전 디렉터리(가장 높은 버전)에서 스킬 파일과 hooks 파일을 원본 저장소의 대응 파일과 `diff`로 비교한다. 변경된 파일 목록과 **변경 방향**을 사용자에게 보여준다.
+각 플러그인의 최신 버전 디렉터리(가장 높은 버전)에서 스킬 파일, 에이전트 파일, hooks 파일을 원본 저장소의 대응 파일과 `diff`로 비교한다. 변경된 파일 목록과 **변경 방향**을 사용자에게 보여준다.
 
 변경 방향 판단:
 - **캐시가 최신**: 캐시에만 변경이 있고 원본은 git clean → 캐시 → 원본 동기화 필요
@@ -75,6 +76,7 @@ Step 1의 변경 방향에 따라 처리:
 정보 수집:
 - 각 `plugins/{플러그인}/.claude-plugin/plugin.json`에서 `name`, `description`, `version`
 - 각 `plugins/{플러그인}/skills/*/skill.md`의 frontmatter에서 `name`, `description` (첫 문장만 사용)
+- 각 `plugins/{플러그인}/agents/*.md`의 frontmatter에서 `name`, `description` (첫 문장만 사용, 있는 경우)
 - 각 `plugins/{플러그인}/hooks/hooks.json`에서 hook 정의 (있는 경우)
 - 각 `plugins/{플러그인}/hooks/*.sh`에서 hook 동작 설명 (stderr 메시지에서 추출)
 
@@ -93,6 +95,12 @@ README 구조:
 | {스킬명} | `/{스킬명}` | {스킬 description 첫 문장} |
 ...
 
+**Agents** (agents 디렉터리가 있는 플러그인만)
+
+| Agent | Description |
+|---|---|
+| {에이전트명} | {에이전트 description 첫 문장} |
+
 **Hooks** (hooks 디렉터리가 있는 플러그인만)
 
 | Hook | Trigger | Description |
@@ -107,6 +115,7 @@ README 구조:
 규칙:
 - 스킬은 알파벳순으로 정렬
 - description이 길면 첫 마침표(`. ` 또는 행 끝 `.`)까지만 사용한다. 테이블 셀의 가독성을 위해 1문장으로 제한.
+- agents가 없는 플러그인은 **Agents** 섹션을 생략한다
 - hooks가 없는 플러그인은 **Hooks** 섹션을 생략한다
 - 기존 README의 헤더와 Installation 섹션은 유지, Plugins 섹션만 재생성
 - 생성 결과를 기존 README와 diff해서 실질 변경이 없으면 이 단계를 건너뛴다 (불필요한 커밋 방지)
@@ -123,11 +132,12 @@ README 구조:
 
 원본 저장소의 최신 파일을 기존 캐시 디렉터리에 덮어쓴다. `installed_plugins.json`의 `installPath`가 캐시 경로를 직접 참조하므로, 새 디렉터리를 만들지 않고 기존 경로를 유지해야 한다.
 
-IMPORTANT: skills뿐 아니라 hooks 디렉터리도 반드시 함께 복사해야 한다. 누락 시 PostToolUse hook이 동작하지 않는다.
+IMPORTANT: skills뿐 아니라 agents, hooks 디렉터리도 반드시 함께 복사해야 한다. 누락 시 에이전트나 PostToolUse hook이 동작하지 않는다.
 
 복사 대상:
 1. `plugins/{플러그인}/skills/` → `cache/{플러그인}/{버전}/skills/`
-2. `plugins/{플러그인}/hooks/` → `cache/{플러그인}/{버전}/hooks/` (hooks 디렉터리가 있는 경우)
+2. `plugins/{플러그인}/agents/` → `cache/{플러그인}/{버전}/agents/` (agents 디렉터리가 있는 경우)
+3. `plugins/{플러그인}/hooks/` → `cache/{플러그인}/{버전}/hooks/` (hooks 디렉터리가 있는 경우)
 
 ### Step 8: 완료 안내
 
