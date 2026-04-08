@@ -17,12 +17,13 @@ Developer productivity tools for git workflow, project management, and skill eva
 | sql | `/sql` | SQL 조회 실행 — 캐시 기반 테이블 매칭, 모호성 자동 해소, SELECT 쿼리 생성·실행 |
 | worktree | `/worktree` | Git worktree 생성/삭제 (bare-repo 하위 디렉토리) |
 
-### feature-dev (v1.0.0)
+### feature-dev (v1.1.0)
 
 Plan-implement-evaluate feature development workflow with automated quality gates.
 
 | Skill | Command | Description |
 |---|---|---|
+| eval-agent | `/eval-agent` | 에이전트 정의 파일의 구조·내용을 베스트 프랙티스 기반으로 평가 |
 | implement | `/implement` | progress.json의 feature를 읽고 코드 구현 + 테스트 + 평가 루프 실행 |
 | plan | `/plan` | 기능 설명을 받아 progress.json에 feature 객체 생성 (completion criteria 포함) |
 
@@ -31,8 +32,8 @@ Plan-implement-evaluate feature development workflow with automated quality gate
 | Agent | Description |
 |---|---|
 | evaluator | 구현 코드의 컨벤션 준수 + completion criteria 검증 → evaluation-report.md 생성 |
+| evaluator-design | 구현 결과가 디자인 의도를 충족하는지 브라우저에서 판정 (레이아웃, 색상, 요소 배치, 접근성) |
 | evaluator-plan | plan이 생성한 feature의 구조적 품질 검증 (tasks 분할, criteria 구체성, scope, goal) |
-| evaluator-playwright | playwright:dom/visual criteria를 브라우저에서 실제 검증 |
 
 ### note-plugins (v1.3.5)
 
