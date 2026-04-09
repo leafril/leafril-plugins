@@ -12,9 +12,15 @@
     },
     {
       "name": "dev-tools",
-      "description": "Developer productivity tools for git workflow, project management, skill evaluation, and feature development workflow",
-      "version": "2.0.0",
+      "description": "Developer productivity tools for git workflow, project management, and skill evaluation",
+      "version": "1.14.0",
       "source": "./plugins/dev-tools"
+    },
+    {
+      "name": "dev-workflow",
+      "description": "Plan-implement-evaluate feature development workflow with automated quality gates, driven by progress.json",
+      "version": "1.0.0",
+      "source": "./plugins/dev-workflow"
     }
   ]
 }

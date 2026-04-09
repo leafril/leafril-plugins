@@ -1,0 +1,5 @@
+{
+  "name": "dev-workflow",
+  "description": "Plan-implement-evaluate feature development workflow with automated quality gates, driven by progress.json",
+  "version": "1.0.0"
+}

@@ -4,9 +4,9 @@ Claude Code plugin marketplace for developer productivity and knowledge manageme
 
 ## Plugins
 
-### dev-tools (v2.0.0)
+### dev-tools (v1.14.0)
 
-Developer productivity tools for git workflow, project management, skill evaluation, and feature development workflow.
+Developer productivity tools for git workflow, project management, and skill evaluation.
 
 | Skill | Command | Description |
 |---|---|---|
@@ -14,11 +14,18 @@ Developer productivity tools for git workflow, project management, skill evaluat
 | eval-agent | `/eval-agent` | 에이전트 정의 파일의 구조·내용을 베스트 프랙티스 기반으로 평가 |
 | eval-skill | `/eval-skill` | 스킬 구조·내용 평가 보고서 출력 |
 | eval-test | `/eval-test` | Kotlin 테스트 작성·실행·자가평가 검증 루프 |
-| implement | `/implement` | progress.json의 feature를 읽고 코드 구현 + 테스트 + 평가 루프 실행 |
-| plan | `/plan` | 기능 설명을 받아 progress.json에 feature 객체 생성 (completion criteria 포함) |
 | plugin-update | `/plugin-update` | 플러그인 변경사항 원본 저장소 동기화, 버전 업데이트, push |
 | sql | `/sql` | SQL 조회 실행 — 캐시 기반 테이블 매칭, 모호성 자동 해소, SELECT 쿼리 생성·실행 |
 | worktree | `/worktree` | Git worktree 생성/삭제 (bare-repo 하위 디렉토리) |
+
+### dev-workflow (v1.0.0)
+
+Plan-implement-evaluate feature development workflow with automated quality gates, driven by progress.json.
+
+| Skill | Command | Description |
+|---|---|---|
+| implement | `/implement` | progress.json의 feature를 읽고 코드 구현 + 테스트 + 평가 루프 실행 |
+| plan | `/plan` | 기능 설명을 받아 progress.json에 feature 객체 생성 (completion criteria 포함) |
 
 **Agents**
 
