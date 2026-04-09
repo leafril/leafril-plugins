@@ -4,35 +4,29 @@ Claude Code plugin marketplace for developer productivity and knowledge manageme
 
 ## Plugins
 
-### dev-tools (v1.13.0)
+### dev-tools (v2.0.0)
 
-Developer productivity tools for git workflow, project management, and skill evaluation.
+Developer productivity tools for git workflow, project management, skill evaluation, and feature development workflow.
 
 | Skill | Command | Description |
 |---|---|---|
 | claude-md-audit | `/claude-md-audit` | CLAUDE.md 파일을 베스트 프랙티스 기반으로 감사·개선 |
+| eval-agent | `/eval-agent` | 에이전트 정의 파일의 구조·내용을 베스트 프랙티스 기반으로 평가 |
 | eval-skill | `/eval-skill` | 스킬 구조·내용 평가 보고서 출력 |
 | eval-test | `/eval-test` | Kotlin 테스트 작성·실행·자가평가 검증 루프 |
+| implement | `/implement` | progress.json의 feature를 읽고 코드 구현 + 테스트 + 평가 루프 실행 |
+| plan | `/plan` | 기능 설명을 받아 progress.json에 feature 객체 생성 (completion criteria 포함) |
 | plugin-update | `/plugin-update` | 플러그인 변경사항 원본 저장소 동기화, 버전 업데이트, push |
 | sql | `/sql` | SQL 조회 실행 — 캐시 기반 테이블 매칭, 모호성 자동 해소, SELECT 쿼리 생성·실행 |
 | worktree | `/worktree` | Git worktree 생성/삭제 (bare-repo 하위 디렉토리) |
-
-### feature-dev (v1.1.0)
-
-Plan-implement-evaluate feature development workflow with automated quality gates.
-
-| Skill | Command | Description |
-|---|---|---|
-| eval-agent | `/eval-agent` | 에이전트 정의 파일의 구조·내용을 베스트 프랙티스 기반으로 평가 |
-| implement | `/implement` | progress.json의 feature를 읽고 코드 구현 + 테스트 + 평가 루프 실행 |
-| plan | `/plan` | 기능 설명을 받아 progress.json에 feature 객체 생성 (completion criteria 포함) |
 
 **Agents**
 
 | Agent | Description |
 |---|---|
-| evaluator | 구현 코드의 컨벤션 준수 + completion criteria 검증 → evaluation-report.md 생성 |
-| evaluator-design | 구현 결과가 디자인 의도를 충족하는지 브라우저에서 판정 (레이아웃, 색상, 요소 배치, 접근성) |
+| evaluator | 구현 코드의 컨벤션 준수 + completion criteria 검증 → evaluation-report.md 생성 + progress.json 업데이트 |
+| evaluator-design | 구현 결과가 시각적 디자인 의도를 충족하는지 screenshot 기반으로 판정 |
+| evaluator-functional | 구현 결과가 기능적으로 올바른지 DOM 구조·요소·인터랙션을 브라우저에서 판정 |
 | evaluator-plan | plan이 생성한 feature의 구조적 품질 검증 (tasks 분할, criteria 구체성, scope, goal) |
 
 ### note-plugins (v1.3.5)
