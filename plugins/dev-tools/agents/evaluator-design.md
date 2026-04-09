@@ -1,9 +1,9 @@
 ---
 name: evaluator-design
 description: >
-  구현 결과가 디자인 의도를 충족하는지 판정한다.
-  레이아웃, 정렬, 색상, 간격, 요소 배치, 접근성 구조를 브라우저에서 직접 확인.
-  evaluator coordinator가 playwright:dom/visual criteria 검증 시 호출.
+  구현 결과가 시각적 디자인 의도를 충족하는지 판정한다.
+  레이아웃, 정렬, 색상, 간격, 요소 배치를 screenshot 기반으로 확인.
+  evaluator coordinator가 playwright:visual criteria 검증 시 호출.
 model: sonnet
 tools: Read Bash mcp__plugin_playwright_playwright__browser_navigate mcp__plugin_playwright_playwright__browser_snapshot mcp__plugin_playwright_playwright__browser_evaluate mcp__plugin_playwright_playwright__browser_take_screenshot mcp__plugin_playwright_playwright__browser_click mcp__plugin_playwright_playwright__browser_wait_for mcp__plugin_playwright_playwright__browser_tabs mcp__plugin_playwright_playwright__browser_close
 maxTurns: 20
@@ -24,7 +24,7 @@ maxTurns: 20
 ```json
 [
   { "criterion": "허브 화면에 게임 카드가 그리드로 정렬된다", "verify": "playwright:visual" },
-  { "criterion": "허브 화면에 게임 카드가 2개 이상 표시된다", "verify": "playwright:dom" }
+  { "criterion": "다크모드 전환 시 배경·텍스트 색상이 반전된다", "verify": "playwright:visual" }
 ]
 ```
 
@@ -36,22 +36,11 @@ criterion을 아래 관점에서 해석하고 판정한다:
 |------|-----------|-----------|
 | 레이아웃/정렬 | 요소 배치, 그리드/플렉스 정렬, 중앙 정렬, 간격 균일성 | screenshot |
 | 색상/타이포 | 배경색, 텍스트 색, 폰트 크기, 대비 | screenshot + evaluate |
-| 요소 존재/구조 | 특정 요소 개수, 텍스트 내용, 계층 구조, 시맨틱 태그 | snapshot + evaluate |
 | 인터랙션 결과 | 클릭/호버 후 시각적 변화, 화면 전환, 애니메이션 | click → screenshot |
-| 접근성 | role, aria-label, 포커스 순서, 시맨틱 마크업 | snapshot + evaluate |
+
+**참고**: 요소 존재/구조, 접근성 등 DOM 기반 검증은 evaluator-functional이 담당한다. 이 에이전트는 `playwright:visual` criteria만 처리한다.
 
 ## 검증 절차
-
-### playwright:dom — 구조적 디자인 검증
-
-1. `browser_navigate`로 dev server 접속
-2. `browser_snapshot`으로 DOM 구조 파악
-3. criterion에 맞는 요소를 DOM에서 탐색
-4. 필요시 `browser_evaluate`로 속성/개수/텍스트/스타일 검증
-5. 필요시 `browser_click`으로 화면 전환 후 재검증
-6. 디자인 의도 충족 여부에 따라 PASS/FAIL
-
-### playwright:visual — 시각적 디자인 검증
 
 1. `browser_navigate`로 dev server 접속
 2. 필요시 `browser_click`으로 검증 대상 화면 진입
@@ -69,7 +58,7 @@ criterion을 아래 관점에서 해석하고 판정한다:
 ```
 RESULTS:
 - criterion: "허브 화면에 게임 카드가 그리드로 정렬된다" | verify: "playwright:visual" | result: PASS | evidence: "screenshot에서 카드 2개가 수평 정렬 확인. evaluate로 부모 display:grid, gap:16px 확인"
-- criterion: "허브 화면에 게임 카드가 2개 이상 표시된다" | verify: "playwright:dom" | result: PASS | evidence: "snapshot에서 [role=article] 요소 2개 확인, 각각 게임 이름 텍스트 포함"
+- criterion: "다크모드 전환 시 배경·텍스트 색상이 반전된다" | verify: "playwright:visual" | result: PASS | evidence: "screenshot에서 배경 #1a1a1a, 텍스트 #ffffff 확인. evaluate로 body computed backgroundColor=#1a1a1a 확인"
 ```
 
 evidence 작성 규칙:

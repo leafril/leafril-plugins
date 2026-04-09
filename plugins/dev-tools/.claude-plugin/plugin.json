@@ -1,5 +1,5 @@
 {
   "name": "dev-tools",
-  "description": "Developer productivity tools for git workflow, project management, and skill evaluation",
-  "version": "1.13.0"
+  "description": "Developer productivity tools for git workflow, project management, skill evaluation, and feature development workflow",
+  "version": "2.0.0"
 }
