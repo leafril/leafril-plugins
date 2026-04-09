@@ -5,7 +5,7 @@ description: >
   playwright 서브에이전트로 실제 기능을 확인하여
   evaluation-report.md 생성 + progress.json 업데이트.
 model: sonnet
-tools: Read Write Edit Bash Glob Grep ToolSearch Agent(evaluator-design) Agent(evaluator-functional)
+tools: Read Write Edit Bash Glob Grep ToolSearch Agent(evaluator-design) Agent(evaluator-functional) Agent(evaluator-test)
 maxTurns: 30
 ---
 
@@ -38,7 +38,7 @@ implement skill에서 Agent로 호출되며, 다음 정보를 전달받는다:
 3. `git log --oneline -20` 으로 최근 변경 파악
 4. criteria를 verify 타입별로 분류:
    - `bash:*` → `bashCriteria` (coordinator가 직접 실행)
-   - `test` → `testCriteria` (coordinator가 직접 실행)
+   - `test` → `testCriteria` (coordinator가 테스트 실행 + evaluator-test에 품질 검증 위임)
    - `playwright:dom` → `domCriteria` (evaluator-functional에 위임)
    - `playwright:visual` → `visualCriteria` (evaluator-design에 위임)
 
@@ -54,7 +54,30 @@ bashCriteria의 각 criterion에 대해:
 testCriteria가 있으면:
 1. criterion 키워드로 관련 테스트 파일 탐색 (Glob/Grep)
 2. 테스트 러너로 실행 (프로젝트의 test 스크립트 사용)
-3. 테스트 통과 여부로 PASS/FAIL
+3. 테스트 통과 여부 기록
+4. evaluator-test 서브에이전트에 품질 검증 위임 (Step 2-b)
+5. 테스트 실행 결과 + 품질 검증 결과를 종합하여 PASS/FAIL
+
+### Step 2-b: 테스트 품질 검증 (evaluator-test 위임)
+
+testCriteria가 있고 테스트 파일이 존재하면, evaluator-test 서브에이전트에 품질 검증을 위임한다.
+
+1. 프로젝트 언어에 맞는 규칙 파일 경로를 결정:
+   - Kotlin/Java → `references/rules-kotlin.md`
+   - TypeScript/JavaScript → `references/rules-typescript.md`
+   - 규칙 파일이 없으면 품질 검증을 SKIP
+2. evaluator-test에 전달:
+
+```
+프로젝트 루트: {root}
+테스트 규칙 파일: {rules_path}
+검증할 criteria:
+{testCriteria JSON}
+
+evaluator-test 에이전트의 절차에 따라 검증하고 RESULTS 형식으로 출력하라.
+```
+
+3. 최종 판정: 테스트 실행 PASS + 품질 검증 PASS → criterion PASS. 어느 하나라도 FAIL → criterion FAIL (evidence에 실행 결과와 품질 위반 사항 모두 기록)
 
 ## 3. 컨벤션 검증 (직접 수행)
 
@@ -80,6 +103,7 @@ Step 1에서 분류한 criteria를 전담 서브에이전트에 위임한다:
 
 | verify 타입 | 서브에이전트 | 역할 |
 |-------------|-------------|------|
+| `test` | **evaluator-test** | 테스트 코드 품질 검증. rules 파일 §7 체크리스트 기반 (테스트 실행은 coordinator가 직접) |
 | `playwright:dom` | **evaluator-functional** | DOM 구조/상태/속성 기반 기능 검증. snapshot + evaluate만 사용, screenshot 없음 |
 | `playwright:visual` | **evaluator-design** | 레이아웃/색상/정렬 등 시각적 디자인 검증. screenshot + computed style 사용 |
 

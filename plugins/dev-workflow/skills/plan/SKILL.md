@@ -144,18 +144,5 @@ feature 객체를 위 스키마에 맞게 작성한다:
 evaluator-plan 에이전트의 절차에 따라 검증하고 결과를 출력하라.
 ```
 
-- VERDICT가 PASS면 Step 5로 진행
+- VERDICT가 PASS면 plan 완료
 - VERDICT가 FAIL이면 FIXES의 수정 지시에 따라 feature를 수정한 뒤 다시 evaluator-plan을 호출
-
-### Step 5: Sprint Contract — 사용자 리뷰
-
-AskUserQuestion으로 리뷰를 요청한다. options 파라미터로 선택지를 제공한다:
-
-- 특히 **decisions**와 **completion_criteria**에 대한 피드백을 구한다
-- 수정 요청 → feature 수정 → evaluator-plan 재검증 → 다시 Step 5
-- **탈출 조건**: 사용자가 "확정" 선택 시 종료
-
-options:
-- "Plan 확정 — 구현 시작"
-- "수정 필요 — 피드백 작성"
-- "취소"

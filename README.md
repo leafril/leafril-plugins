@@ -4,7 +4,7 @@ Claude Code plugin marketplace for developer productivity and knowledge manageme
 
 ## Plugins
 
-### dev-tools (v1.14.0)
+### dev-tools (v1.15.0)
 
 Developer productivity tools for git workflow, project management, and skill evaluation.
 
@@ -13,12 +13,11 @@ Developer productivity tools for git workflow, project management, and skill eva
 | claude-md-audit | `/claude-md-audit` | CLAUDE.md 파일을 베스트 프랙티스 기반으로 감사·개선 |
 | eval-agent | `/eval-agent` | 에이전트 정의 파일의 구조·내용을 베스트 프랙티스 기반으로 평가 |
 | eval-skill | `/eval-skill` | 스킬 구조·내용 평가 보고서 출력 |
-| eval-test | `/eval-test` | Kotlin 테스트 작성·실행·자가평가 검증 루프 |
 | plugin-update | `/plugin-update` | 플러그인 변경사항 원본 저장소 동기화, 버전 업데이트, push |
 | sql | `/sql` | SQL 조회 실행 — 캐시 기반 테이블 매칭, 모호성 자동 해소, SELECT 쿼리 생성·실행 |
 | worktree | `/worktree` | Git worktree 생성/삭제 (bare-repo 하위 디렉토리) |
 
-### dev-workflow (v1.0.0)
+### dev-workflow (v1.1.0)
 
 Plan-implement-evaluate feature development workflow with automated quality gates, driven by progress.json.
 
@@ -35,6 +34,7 @@ Plan-implement-evaluate feature development workflow with automated quality gate
 | evaluator-design | 구현 결과가 시각적 디자인 의도를 충족하는지 screenshot 기반으로 판정 |
 | evaluator-functional | 구현 결과가 기능적으로 올바른지 DOM 구조·요소·인터랙션을 브라우저에서 판정 |
 | evaluator-plan | plan이 생성한 feature의 구조적 품질 검증 (tasks 분할, criteria 구체성, scope, goal) |
+| evaluator-test | 테스트 코드 품질을 rules 파일 체크리스트 기반으로 검증 |
 
 ### note-plugins (v1.3.5)
 
