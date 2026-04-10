@@ -64,15 +64,18 @@ testCriteria가 있으면:
 
 testCriteria가 있고 테스트 파일이 존재하면, evaluator-test 서브에이전트에 품질 검증을 위임한다.
 
-1. 프로젝트 언어에 맞는 규칙 파일 경로를 결정:
-   - Kotlin/Java → `references/rules-kotlin.md`
-   - TypeScript/JavaScript → `references/rules-typescript.md`
-   - 규칙 파일이 없으면 품질 검증을 SKIP
+1. 테스트 규칙 파일 경로 **두 개**를 결정:
+   - 공통: `references/test-rules-common.md` (언어 무관)
+   - 언어별: 프로젝트 루트 마커로 감지
+     * `build.gradle*` 또는 `pom.xml` 존재 → `references/test-rules-kotlin.md`
+     * `package.json` + (`tsconfig.json` 또는 `*.ts`/`*.tsx`) 존재 → `references/test-rules-typescript.md`
+   - common 파일이 없거나 언어를 감지할 수 없으면 품질 검증을 SKIP하고 근거에 사유 명시
 2. evaluator-test에 전달:
 
 ```
 프로젝트 루트: {root}
-테스트 규칙 파일: {rules_path}
+테스트 규칙 파일 (공통): {common_rules_path}
+테스트 규칙 파일 (언어): {lang_rules_path}
 검증할 criteria:
 {testCriteria JSON}
 

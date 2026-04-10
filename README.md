@@ -18,14 +18,14 @@ Developer productivity tools for git workflow, project management, and skill eva
 | sql | `/sql` | SQL 조회 실행 — 캐시 기반 테이블 매칭, 모호성 자동 해소, SELECT 쿼리 생성·실행 |
 | worktree | `/worktree` | Git worktree 생성/삭제 (bare-repo 하위 디렉토리) |
 
-### dev-workflow (v1.2.0)
+### dev-workflow (v1.3.0)
 
 Plan-implement-evaluate feature development workflow with automated quality gates, driven by per-feature JSON files in progress/ directory.
 
 | Skill | Command | Description |
 |---|---|---|
-| implement | `/implement` | progress/{feature-id}.json의 feature를 읽고 코드 구현 + 테스트 작성 + 테스트 실행 |
-| plan | `/plan` | 기능 설명을 받아 progress/{feature-id}.json에 feature 생성 (Completion Criteria 포함) |
+| implement | `/implement` | progress/{feature-id}.json의 feature를 읽고 task 단위로 코드 구현 + 테스트 작성 + 테스트 실행을 수행 |
+| plan | `/plan` | 기능 설명을 받아 progress/{feature-id}.json에 feature를 생성 |
 
 **Agents**
 
