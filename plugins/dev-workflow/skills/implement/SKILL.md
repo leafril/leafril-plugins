@@ -1,6 +1,6 @@
 ---
 name: implement
-description: progress.json의 feature를 읽고 코드 구현 + 테스트 작성 + 테스트 실행을 수행한다. 구현 시작, /implement, 코드 작성 시 사용.
+description: progress/{feature-id}.json의 feature를 읽고 코드 구현 + 테스트 작성 + 테스트 실행을 수행한다. 구현 시작, /implement, 코드 작성 시 사용.
 disable-model-invocation: true
 argument-hint: [--all] <feature-id (생략 시 planned feature 자동 선택)>
 allowed-tools:
@@ -16,7 +16,7 @@ allowed-tools:
 
 ## Gotchas
 
-- Plan에 없는 변경은 하지 않는다. **Why**: scope creep 방지. progress.json에서 합의된 범위만 구현해야 평가 채점이 유효하다. 추가 작업이 필요하면 사용자에게 먼저 확인
+- Plan에 없는 변경은 하지 않는다. **Why**: scope creep 방지. progress/{feature-id}.json에서 합의된 범위만 구현해야 평가 채점이 유효하다. 추가 작업이 필요하면 사용자에게 먼저 확인
 - Plan과 다른 접근이 필요하면 사용자에게 먼저 확인한다. **Why**: Sprint Contract — plan은 사용자와의 합의. 일방적 변경은 합의 위반
 - `verify: "test"` criteria가 있으면 반드시 테스트를 작성한다. **Why**: 평가 단계는 테스트를 실행만 한다. 테스트가 없으면 해당 criterion은 자동 FAIL
 - 테스트 작성 시 `references/rules-{lang}.md`를 읽고 규칙을 따른다. **Why**: 평가 단계의 evaluator-test가 같은 규칙으로 품질을 검증한다. 규칙을 따르지 않으면 FAIL
@@ -24,11 +24,11 @@ allowed-tools:
 
 # Implement — Feature Implementation
 
-progress.json의 feature를 읽고 구현한다. 코드 + 테스트 + 실행까지 이 skill의 책임.
+`progress/{feature-id}.json`의 feature를 읽고 구현한다. 코드 + 테스트 + 실행까지 이 skill의 책임.
 
 ## 입력 파싱
 
-`$ARGUMENTS`를 feature id로 처리한다. 생략 시 미완료 tasks가 있는 feature를 자동 선택한다. 여러 개면 AskUserQuestion으로 선택.
+`$ARGUMENTS`를 feature id로 처리한다. 생략 시 `progress/` 디렉토리를 스캔하여 미완료 tasks가 있는 feature를 자동 선택한다. 여러 개면 AskUserQuestion으로 선택.
 
 ```
 /implement                    # planned feature 자동 선택, 다음 미완료 task 1개 수행
@@ -54,7 +54,7 @@ Task 2: 핵심 로직 구현
   → evaluator 호출 → PASS → commit → 다음
 Task 3: API 엔드포인트 연결
   → 코드 작성 → evaluator 호출 → FAIL (응답 형식 불일치)
-  → evaluation-report.md 읽고 수정 → evaluator 재호출 → PASS → commit → 다음
+  → progress/{feature-id}.json의 evaluation 필드 읽고 수정 → evaluator 재호출 → PASS → commit → 다음
 ```
 
 ### 예시: Plan 범위 판단
@@ -66,23 +66,28 @@ Task 3: API 엔드포인트 연결
 
 ### Step 1: Plan 읽기
 
-1. progress.json에서 대상 feature 읽기
-2. feature가 없거나 모든 tasks가 완료 + 모든 criteria가 met이면 중단
+1. `progress/{feature-id}.json` 파일에서 feature 읽기 (파일이 없으면 중단하고 사용자에게 보고)
+2. **종료 조건 판정** — 아래 식이 모두 참이면 feature 완료 상태. 실행 중단.
+   - 모든 `tasks[].criteria[].status`가 `"PASS"` 또는 `"SKIP"`
+   - 모든 `invariants[].status`가 `"PASS"` 또는 `"SKIP"`
+   - `evaluation.convention_violations.length === 0` (evaluation이 아직 비어 있으면 이 조건은 건너뛰고 아래 3번으로 진행)
 3. CLAUDE.md, .claude/rules/*.md 읽기 (컨벤션 파악)
-4. `verify: "test"` criteria가 있으면 프로젝트 언어에 맞는 테스트 규칙 파일을 읽는다:
+4. `tasks[].criteria`와 `invariants`를 모두 훑어 `verify: "test"` criterion이 있으면 프로젝트 언어에 맞는 테스트 규칙 파일을 읽는다:
    - Kotlin/Java 프로젝트 → `references/rules-kotlin.md`
    - TypeScript/JavaScript 프로젝트 → `references/rules-typescript.md`
    - 규칙 파일 경로는 이 스킬 기준 상대 경로 (`../../references/rules-{lang}.md`)
 
 ### Step 2: Task 실행 (구현 → 테스트 → 평가 → 커밋)
 
+**"미완료 task" 정의** — `task.criteria` 중 `status`가 `"PASS"` / `"SKIP"`이 아닌 것이 하나라도 있는 task. `tasks` 배열을 순서대로 훑어 첫 번째 미완료 task를 현재 작업 대상으로 삼는다. 별도 `done` 플래그는 존재하지 않는다.
+
 - **기본 모드**: 첫 번째 미완료 task 1개만 수행 후 종료
-- **`--all` 모드**: 모든 미완료 tasks를 순서대로 진행
+- **`--all` 모드**: 위 정의에 맞는 미완료 task를 순서대로 전부 진행
 
 ```
 for each task (기본 모드에서는 1회만):
   1. 코드 작성
-  2. 테스트 작성 (verify:"test" criteria 관련이면)
+  2. 테스트 작성 (verify:"test" criterion 관련이면)
      - Step 1에서 읽은 rules 파일의 규칙을 따른다
      - §1 코드 유형 분류 → 적절한 테스트 전략 선택
      - §2 테스트하지 않는 것 → 불필요한 테스트 제외
@@ -108,10 +113,10 @@ Agent(subagent_type="evaluator") with prompt:
    evaluator 에이전트 절차에 따라 평가를 수행하라."
 ```
 
-`evaluation-report.md`가 생성되면 읽고 대응한다:
+evaluator는 `progress/{feature-id}.json`의 `evaluation` 필드에 결과를 기록한다. 해당 필드를 읽고 대응한다:
 
 - **PASS** → commit → 다음 task
-- **FAIL** → 리포트의 수정 방향을 참고하여 수정 → evaluator 재호출 (최대 3회, 초과 시 AskUserQuestion)
+- **FAIL** → `evaluation` 필드의 수정 방향을 참고하여 수정 → evaluator 재호출 (최대 3회, 초과 시 AskUserQuestion)
 
 ### Step 4: 완료 보고
 
@@ -128,4 +133,4 @@ Agent(subagent_type="evaluator") with prompt:
 - Plan 범위 밖의 리팩토링, 코드 정리
 - 컨벤션 외 주관적 개선 ("이 변수명이 더 나을 것 같다")
 - PASS/FAIL 판정, 컨벤션 검증 리포트 (evaluator의 책임)
-- completion_criteria.met 갱신 (evaluator의 책임)
+- criterion의 status / evidence 갱신 (evaluator의 책임)
