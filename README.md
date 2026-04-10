@@ -4,15 +4,16 @@ Claude Code plugin marketplace for developer productivity and knowledge manageme
 
 ## Plugins
 
-### dev-tools (v1.15.0)
+### dev-tools (v2.1.0)
 
 Developer productivity tools for git workflow, project management, and skill evaluation.
 
 | Skill | Command | Description |
 |---|---|---|
-| claude-md-audit | `/claude-md-audit` | CLAUDE.md 파일을 베스트 프랙티스 기반으로 감사·개선 |
 | eval-agent | `/eval-agent` | 에이전트 정의 파일의 구조·내용을 베스트 프랙티스 기반으로 평가 |
 | eval-skill | `/eval-skill` | 스킬 구조·내용 평가 보고서 출력 |
+| memory-append | `/memory-append` | 세션 중 얻은 지식 한 조각을 올바른 레벨로 라우팅해 기록 |
+| memory-audit | `/memory-audit` | 프로젝트의 CLAUDE.md 파일을 베스트 프랙티스 기반으로 감사·개선 |
 | plugin-update | `/plugin-update` | 플러그인 변경사항 원본 저장소 동기화, 버전 업데이트, push |
 | sql | `/sql` | SQL 조회 실행 — 캐시 기반 테이블 매칭, 모호성 자동 해소, SELECT 쿼리 생성·실행 |
 | worktree | `/worktree` | Git worktree 생성/삭제 (bare-repo 하위 디렉토리) |
