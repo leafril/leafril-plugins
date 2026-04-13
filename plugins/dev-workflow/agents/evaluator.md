@@ -38,17 +38,27 @@ implement skill에서 Agent로 호출되며, 다음 정보를 전달받는다:
    - 각 criterion을 수집할 때 원본 경로(`tasks[i].criteria[j]` 또는 `invariants[i]`)를 함께 보관해야 Step 5에서 해당 위치의 `status`/`evidence`를 정확히 갱신할 수 있다
 2. CLAUDE.md, .claude/rules/*.md 읽기 (컨벤션 기준)
 3. `git log --oneline -20` 으로 최근 변경 파악
-4. 수집한 criteria를 verify 타입별로 분류:
-   - `bash:*` → `bashCriteria` (coordinator가 직접 실행)
-   - `test` → `testCriteria` (coordinator가 테스트 실행 + evaluator-test에 품질 검증 위임)
-   - `playwright:dom` → `domCriteria` (evaluator-functional에 위임)
-   - `playwright:visual` → `visualCriteria` (evaluator-design에 위임)
+4. **수집한 criteria를 criterion 텍스트 기반으로 분류한다.** plan에는 `verify` 필드가 없으므로, evaluator가 각 criterion의 의도를 읽고 적절한 검증 수단을 결정한다:
+
+   | 분류 | criterion 텍스트 특성 | 예시 |
+   |------|---------------------|------|
+   | `bashCriteria` | 빌드, 타입 체크, lint 등 CLI 명령으로 검증 가능 | "프로덕션 빌드가 통과한다", "타입 체크가 통과한다" |
+   | `testCriteria` | 로직, 상태 전환, 데이터 흐름 등 코드로 검증 가능 | "PERFECT 판정 시 100점이 반환된다", "shared에서 games를 import하지 않는다" |
+   | `domCriteria` | DOM 구조, 요소 존재, 텍스트, 인터랙션 후 상태 변화 | "허브에서 게임 카드가 2개 렌더링된다", "클릭 시 모달이 열린다" |
+   | `visualCriteria` | 레이아웃, 색상, 정렬, 간격 등 시각적 확인 필요 | "게임 카드가 그리드로 정렬된다", "다크모드 시 배경이 반전된다" |
+
+   분류 후 각 criterion 객체에 내부적으로 `_verify` 태그를 부여하여 이후 단계에서 라우팅한다. 분류가 애매한 경우 `testCriteria`를 우선한다 (코드 검증이 가장 안정적).
+
+   `bashCriteria`의 경우 적절한 명령어도 결정한다:
+   - "빌드가 통과한다" → `npm run build` (또는 프로젝트의 빌드 스크립트)
+   - "타입 체크가 통과한다" → `npx tsc --noEmit`
+   - "lint가 통과한다" → `npm run lint`
 
 ## 2. bash criteria 실행 (직접 수행)
 
 bashCriteria의 각 criterion에 대해:
 
-1. `verify` 필드에서 `bash:` 이후의 명령어를 추출
+1. Step 1에서 결정한 명령어를 사용
 2. Bash로 실행
 3. exit code 0이면 PASS, 그 외 FAIL
 4. stdout/stderr를 evidence로 기록
@@ -106,11 +116,11 @@ domCriteria 또는 visualCriteria가 있을 때만 실행한다.
 
 Step 1에서 분류한 criteria를 전담 서브에이전트에 위임한다:
 
-| verify 타입 | 서브에이전트 | 역할 |
-|-------------|-------------|------|
-| `test` | **evaluator-test** | 테스트 코드 품질 검증. rules 파일 §7 체크리스트 기반 (테스트 실행은 coordinator가 직접) |
-| `playwright:dom` | **evaluator-functional** | DOM 구조/상태/속성 기반 기능 검증. snapshot + evaluate만 사용, screenshot 없음 |
-| `playwright:visual` | **evaluator-design** | 레이아웃/색상/정렬 등 시각적 디자인 검증. screenshot + computed style 사용 |
+| 분류 | 서브에이전트 | 역할 |
+|------|-------------|------|
+| `testCriteria` | **evaluator-test** | 테스트 코드 품질 검증. rules 파일 §7 체크리스트 기반 (테스트 실행은 coordinator가 직접) |
+| `domCriteria` | **evaluator-functional** | DOM 구조/상태/속성 기반 기능 검증. snapshot + evaluate만 사용, screenshot 없음 |
+| `visualCriteria` | **evaluator-design** | 레이아웃/색상/정렬 등 시각적 디자인 검증. screenshot + computed style 사용 |
 
 두 타입의 criteria가 모두 존재하면 서브에이전트를 **병렬**로 호출한다.
 
@@ -134,8 +144,8 @@ dev server URL: http://localhost:{port}
 fallback 절차:
 1. `ToolSearch(query: "playwright", max_results: 10)`로 MCP Playwright 도구 로드
 2. `browser_navigate`로 dev server 접속
-3. `playwright:dom` criteria → `browser_snapshot` + `browser_evaluate`로 DOM 검증
-4. `playwright:visual` criteria → `browser_take_screenshot`으로 시각 검증
+3. `domCriteria` → `browser_snapshot` + `browser_evaluate`로 DOM 검증
+4. `visualCriteria` → `browser_take_screenshot`으로 시각 검증
 5. MCP Playwright도 사용 불가하면 → 해당 criteria를 SKIP 처리하고 근거에 "Playwright 환경 미설치 — 수동 검증 필요" 명시
 
 ## 5. progress/{feature-id}.json 업데이트
@@ -147,7 +157,7 @@ fallback 절차:
 Step 1에서 보관한 원본 경로를 사용해 criterion 객체 자체의 필드를 갱신한다.
 
 - 경로: `tasks[i].criteria[j].status` / `.evidence`, `invariants[i].status` / `.evidence`
-- `status`: `"PASS"` | `"FAIL"` | `"SKIP"` 중 하나
+- `status`: `"PASS"` | `"FAIL"` | `"SKIP"` 중 하나 (implement가 설정한 `"DONE"`을 덮어쓴다)
 - `evidence`:
   - PASS → 확인 근거 (예: "browser_snapshot에서 [role=article] 요소 3개 확인")
   - FAIL → 문제 설명 + 수정 방향
@@ -177,7 +187,7 @@ Step 1에서 보관한 원본 경로를 사용해 criterion 객체 자체의 필
 - 위 조건을 충족하면서 1개 이상 `SKIP` 존재 → `PASS_WITH_SKIP`
 - 1개 이상 `FAIL` 또는 `convention_violations` 1건 이상 → `FAIL`
 
-`tasks[].done` 같은 별도 완료 플래그는 **건드리지 않는다** — task 완료는 해당 task의 `criteria[].status`로부터 파생되므로 스키마에 저장하지 않는다.
+task 완료는 해당 task의 `criteria[].status`로부터 파생된다. implement가 설정한 `"DONE"`은 evaluator가 `"PASS"` / `"FAIL"` / `"SKIP"`으로 덮어쓴다. 별도 완료 플래그는 스키마에 저장하지 않는다.
 
 ### 주의사항
 

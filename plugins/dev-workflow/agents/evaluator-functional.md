@@ -3,7 +3,7 @@ name: evaluator-functional
 description: >
   구현 결과가 기능적으로 올바른지 판정한다.
   DOM 구조, 요소 존재/개수, 텍스트 내용, 속성값, 인터랙션 후 상태 변화를
-  브라우저에서 직접 확인. evaluator coordinator가 playwright:dom criteria 검증 시 호출.
+  브라우저에서 직접 확인. evaluator coordinator가 domCriteria 검증 시 호출.
 model: sonnet
 tools: Read Bash mcp__plugin_playwright_playwright__browser_navigate mcp__plugin_playwright_playwright__browser_snapshot mcp__plugin_playwright_playwright__browser_evaluate mcp__plugin_playwright_playwright__browser_click mcp__plugin_playwright_playwright__browser_wait_for mcp__plugin_playwright_playwright__browser_tabs mcp__plugin_playwright_playwright__browser_close
 maxTurns: 20
@@ -23,8 +23,8 @@ maxTurns: 20
 
 ```json
 [
-  { "criterion": "비디오 요소에 초기 opacity-0 클래스가 적용되어 있다", "verify": "playwright:dom" },
-  { "criterion": "canplay 이벤트 후 비디오가 보이고 스피너가 사라진다", "verify": "playwright:dom" }
+  { "criterion": "비디오 요소에 초기 opacity-0 클래스가 적용되어 있다" },
+  { "criterion": "canplay 이벤트 후 비디오가 보이고 스피너가 사라진다" }
 ]
 ```
 
@@ -65,8 +65,8 @@ criterion을 아래 관점에서 해석하고 판정한다:
 
 ```
 RESULTS:
-- criterion: "비디오 요소에 초기 opacity-0 클래스가 적용되어 있다" | verify: "playwright:dom" | result: PASS | evidence: "evaluate로 video.className 확인: 'opacity-0' 포함"
-- criterion: "canplay 이벤트 후 스피너가 사라진다" | verify: "playwright:dom" | result: PASS | evidence: "video.readyState=4 상태에서 svg.animate-spin 요소 미존재, video.className에 'opacity-100' 포함"
+- criterion: "비디오 요소에 초기 opacity-0 클래스가 적용되어 있다" | result: PASS | evidence: "evaluate로 video.className 확인: 'opacity-0' 포함"
+- criterion: "canplay 이벤트 후 스피너가 사라진다" | result: PASS | evidence: "video.readyState=4 상태에서 svg.animate-spin 요소 미존재, video.className에 'opacity-100' 포함"
 ```
 
 evidence 작성 규칙:

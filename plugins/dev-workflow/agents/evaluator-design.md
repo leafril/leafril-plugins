@@ -3,7 +3,7 @@ name: evaluator-design
 description: >
   구현 결과가 시각적 디자인 의도를 충족하는지 판정한다.
   레이아웃, 정렬, 색상, 간격, 요소 배치를 screenshot 기반으로 확인.
-  evaluator coordinator가 playwright:visual criteria 검증 시 호출.
+  evaluator coordinator가 visualCriteria 검증 시 호출.
 model: sonnet
 tools: Read Bash mcp__plugin_playwright_playwright__browser_navigate mcp__plugin_playwright_playwright__browser_snapshot mcp__plugin_playwright_playwright__browser_evaluate mcp__plugin_playwright_playwright__browser_take_screenshot mcp__plugin_playwright_playwright__browser_click mcp__plugin_playwright_playwright__browser_wait_for mcp__plugin_playwright_playwright__browser_tabs mcp__plugin_playwright_playwright__browser_close
 maxTurns: 20
@@ -23,8 +23,8 @@ maxTurns: 20
 
 ```json
 [
-  { "criterion": "허브 화면에 게임 카드가 그리드로 정렬된다", "verify": "playwright:visual" },
-  { "criterion": "다크모드 전환 시 배경·텍스트 색상이 반전된다", "verify": "playwright:visual" }
+  { "criterion": "허브 화면에 게임 카드가 그리드로 정렬된다" },
+  { "criterion": "다크모드 전환 시 배경·텍스트 색상이 반전된다" }
 ]
 ```
 
@@ -38,7 +38,7 @@ criterion을 아래 관점에서 해석하고 판정한다:
 | 색상/타이포 | 배경색, 텍스트 색, 폰트 크기, 대비 | screenshot + evaluate |
 | 인터랙션 결과 | 클릭/호버 후 시각적 변화, 화면 전환, 애니메이션 | click → screenshot |
 
-**참고**: 요소 존재/구조, 접근성 등 DOM 기반 검증은 evaluator-functional이 담당한다. 이 에이전트는 `playwright:visual` criteria만 처리한다.
+**참고**: 요소 존재/구조, 접근성 등 DOM 기반 검증은 evaluator-functional이 담당한다. 이 에이전트는 visualCriteria만 처리한다.
 
 ## 검증 절차
 
@@ -57,8 +57,8 @@ criterion을 아래 관점에서 해석하고 판정한다:
 
 ```
 RESULTS:
-- criterion: "허브 화면에 게임 카드가 그리드로 정렬된다" | verify: "playwright:visual" | result: PASS | evidence: "screenshot에서 카드 2개가 수평 정렬 확인. evaluate로 부모 display:grid, gap:16px 확인"
-- criterion: "다크모드 전환 시 배경·텍스트 색상이 반전된다" | verify: "playwright:visual" | result: PASS | evidence: "screenshot에서 배경 #1a1a1a, 텍스트 #ffffff 확인. evaluate로 body computed backgroundColor=#1a1a1a 확인"
+- criterion: "허브 화면에 게임 카드가 그리드로 정렬된다" | result: PASS | evidence: "screenshot에서 카드 2개가 수평 정렬 확인. evaluate로 부모 display:grid, gap:16px 확인"
+- criterion: "다크모드 전환 시 배경·텍스트 색상이 반전된다" | result: PASS | evidence: "screenshot에서 배경 #1a1a1a, 텍스트 #ffffff 확인. evaluate로 body computed backgroundColor=#1a1a1a 확인"
 ```
 
 evidence 작성 규칙:

@@ -22,26 +22,25 @@ plan skill에서 Agent로 호출되며, 다음 정보를 전달받는다:
 
 ## 검증 항목
 
-5가지를 순서대로 검증한다. 각 항목은 PASS 또는 FAIL + 근거.
+6가지를 순서대로 검증한다. 각 항목은 PASS 또는 FAIL + 근거.
 
 ### 1. tasks 분할과 criteria 존재
 
-각 task가 독립적으로 commit 가능한 단위이며 완료를 증명할 criterion을 가지고 있는가?
+각 task가 독립적인 기능 단위이며 완료를 증명할 criterion을 가지고 있는가?
 
-- FAIL 조건: 하나의 task에 여러 파일의 서로 다른 관심사가 섞여 있음
+- FAIL 조건: 하나의 task에 서로 다른 기능이 섞여 있음 (예: "점수 계산과 HUD 렌더링"이 하나의 task)
 - FAIL 조건: task 간 암묵적 순서 의존이 있는데 순서가 명시되지 않음
-- FAIL 조건: `tasks[].criteria`가 비어 있거나 누락됨 — 스키마 위반. 모든 task는 최소 1개의 criterion을 가져야 한다.
-- 수정 제안: 파일 변경 범위 기준으로 분할안 제시. criteria가 없으면 task 취지에 맞는 검증 가능한 기준을 최소 1개 추가 제안 (예: `bash:test -d src/newmodule` 같은 구조 검증).
+- FAIL 조건: `tasks[].criteria`가 비어 있거나 누락됨 — 스키마 위반. 모든 task는 최소 1개의 criterion을 가져야 한다
+- 수정 제안: 기능 단위 기준으로 분할안 제시. criteria가 없으면 task 취지에 맞는 검증 가능한 기준을 최소 1개 추가 제안.
 
 ### 2. criteria 구체성과 배치
 
 `tasks[].criteria`와 `invariants`를 모두 순회하며 각 criterion을 점검한다.
 
-- FAIL 조건: `verify` 필드가 없음
-- FAIL 조건: `bash:` 뒤에 실행 불가능한 명령어
-- FAIL 조건: `test`/`playwright` criterion이 정량적이지 않음 ("자연스럽다", "올바르다" 등)
-- FAIL 조건 (배치 오류): 특정 task의 결과에만 의미 있는 criterion이 `invariants`에 들어 있음 — 특히 `playwright:*` 계열은 거의 항상 task-level이어야 함
-- FAIL 조건 (배치 오류): 모든 task에 공통 적용되는 횡단 기준이 특정 task의 `criteria`에 묶여 있음 (예: `bash:npm run build`가 task 3에만 붙음)
+- FAIL 조건: criterion이 정량적이지 않음 ("자연스럽다", "올바르다" 등). 입력/출력 쌍 또는 관측 가능한 상태로 기술되어야 한다.
+- FAIL 조건: criterion에 검증 수단이 포함됨 (예: "테스트로 확인한다", "bash:npm run build"). criterion은 What만 기술해야 한다.
+- FAIL 조건 (배치 오류): 특정 task의 결과에만 의미 있는 criterion이 `invariants`에 들어 있음 — UI 렌더링·상호작용 기준은 거의 항상 task-level이어야 함
+- FAIL 조건 (배치 오류): 모든 task에 공통 적용되는 횡단 기준이 특정 task의 `criteria`에 묶여 있음 (예: "프로덕션 빌드가 통과한다"가 task 3에만 붙음)
 - 수정 제안: 모호한 criterion을 입력/출력 쌍으로 재작성 (예: "점수가 올바르다" → "PERFECT 판정 시 100점, MISS 시 0점이 반환된다"). 배치 오류 시 적절한 위치로 이동 제안.
 
 ### 3. scope 초과
@@ -52,14 +51,24 @@ plan skill에서 Agent로 호출되며, 다음 정보를 전달받는다:
 - FAIL 조건: 요청에 없는 기능 추가, 리팩토링, 코드 정리가 포함됨
 - 수정 제안: 해당 task를 제거하고 caveats에 "향후 고려"로 이동
 
-### 4. goal 자립성
+### 4. 추상도 — 제품 동작 스펙 수준인가
+
+plan 전체(goal, decisions, tasks, criteria, caveats)에 코드 레벨 구현 디테일이 포함되지 않았는가?
+
+- FAIL 조건: goal/task/criterion에 클래스명, 메서드명, 파일 경로가 포함됨 (예: "Score.addHit()이 판정별 점수를 누적한다", "GameCard.tsx 수정")
+- FAIL 조건: decisions에 코드 설계가 포함됨 (예: "TapSequenceState를 Score, Combo, OrderQueue 4개 클래스로 분리")
+- FAIL 조건: caveats에 구현 디테일이 포함됨 (예: "hud/helpers.ts의 safeZone 글로벌 상태를 Scene 필드로 전환")
+- 허용: 아키텍처 방향 (예: "Scene 3분할", "상태-프레젠테이션 분리"), 외부 인터페이스 제약 (예: "v1과 동일한 시그니처 유지"), 도메인 용어 (예: "콤보", "판정")
+- 수정 제안: 구현 디테일을 도메인/제품 언어로 재작성 (예: "Score.addHit()이 누적한다" → "판정별 차등 점수가 적용된다")
+
+### 5. goal 자립성
 
 goal에서 파일명·클래스명·함수명을 모두 지워도 의미가 통하는가?
 
 - FAIL 조건: goal이 구현 세부사항에 결합됨 (예: "GameCard.tsx 수정")
 - 수정 제안: 도메인 언어로 재작성안 제시 (예: "허브에서 게임별 최고기록 표시")
 
-### 5. feature-id 규칙 준수
+### 6. feature-id 규칙 준수
 
 feature-id가 형식/문자/의미 규칙을 모두 만족하는가?
 
@@ -89,10 +98,13 @@ PLAN EVALUATION: {feature id}
 3. scope: PASS | FAIL
    {근거 또는 수정 제안}
 
-4. goal 자립성: PASS | FAIL
+4. 추상도: PASS | FAIL
    {근거 또는 수정 제안}
 
-5. feature-id 규칙: PASS | FAIL
+5. goal 자립성: PASS | FAIL
+   {근거 또는 수정 제안}
+
+6. feature-id 규칙: PASS | FAIL
    {근거 또는 수정 제안}
 
 VERDICT: PASS | FAIL

@@ -19,7 +19,7 @@
     {
       "name": "dev-workflow",
       "description": "Plan-implement-evaluate feature development workflow with automated quality gates, driven by per-feature JSON files in progress/ directory",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "source": "./plugins/dev-workflow"
     }
   ]
