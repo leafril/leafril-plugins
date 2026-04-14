@@ -227,25 +227,67 @@ step 작업이 끝나면:
 
 ### 5.5 e2e 검증 (선택 옵션)
 
-**왜 분리된 서브에이전트인가**: 같은 컨텍스트가 코드 작성 + 라이브 호출 + 판정을 모두 하면 self-grading 편향이 재발한다. "HTTP 200 = 성공"으로 단락하면서 응답 본문의 의미적 오류(예: 요청 단어가 응답에 없음)를 놓치는 패턴이 반복됨. evaluator 서브에이전트는 fresh context이고 코드 수정 도구가 없어서 검증만 한다.
+**역할 분리 원칙**:
+- **Generator (이 implement skill)**: 환경 부트스트랩(spawn / health check / stop)을 책임짐. 코드 작성 + 환경 준비.
+- **Evaluator (서브에이전트)**: 살아있는 환경을 평가만. 코드 수정 도구·spawn 권한 없음. fresh context.
+
+같은 컨텍스트가 작성+e2e+판정을 모두 하면 self-grading 편향("HTTP 200 = 성공"으로 단락하며 의미적 오류 놓침)이 재발하므로 평가는 반드시 분리.
 
 **왜 step 단위가 아니라 feature 단위인가**: bootRun + 외부 API 호출 + DB 쓰기 1회당 비용·시간이 큼. 작은 step에 매번 강제하면 비효율. unit/integration 테스트가 1차 안전망 역할.
 
+**프로젝트 컨벤션 — `CLAUDE.md`의 `## Local dev server` 섹션**:
+
+스킬은 프로젝트 루트의 `CLAUDE.md`에서 아래 구조의 섹션을 읽어 사용한다:
+
+```
+## Local dev server
+
+- start: <서버 띄우는 명령 (env source 포함)>
+- health: <살아있는지 확인하는 명령 (예: curl -fs URL/health)>
+- stop: <서버 종료 명령 (포트 기반 kill 등)>
+- base_url: <예: http://localhost:8080>
+- log_path: (선택) <stdout/stderr 리다이렉트 경로>
+```
+
+이 섹션이 있으면 자동 spawn 시도. 없으면 사용자에게 띄워달라고 묻는다. drift 방지를 위해 build script(Makefile/gradle task/package.json scripts)에 동일 명령을 두고 CLAUDE.md는 그걸 호출하는 한 줄로 두는 게 권장.
+
 **호출 절차**:
 
-1. **사전조건**: 사용자가 dev server를 띄워둔 상태여야 함. base URL (예: `http://localhost:8080`)을 사용자에게 묻는다 (`AskUserQuestion` 자유 입력). 평가자가 서버를 직접 spawn하지 않는다 — 환경 부트스트랩(env, DB, 외부 creds)은 프로젝트마다 다르고 일반화 불가.
+1. **사전조건 결정**: `CLAUDE.md`의 `## Local dev server` 섹션 읽기. 있으면 §5.5-A로, 없으면 §5.5-B로.
 2. **acceptance criteria 작성**: 이번 feature의 `what`을 검증가능·이진 판정 가능한 항목 3~6개로 쪼갠다. 예: "HTTP 200", "응답 lyrics 배열에 요청 단어 1회 이상 포함", "DB row 1개", "재호출 시 row id 보존". 사용자에게 보여주고 합의 받음.
-3. **서브에이전트 호출**: `Agent` tool에 `subagent_type="dev-workflow:evaluator-functional-backend"`(백엔드) 또는 `evaluator-functional`(프론트)을 지정. 프롬프트에 프로젝트 루트, base URL, criteria, (선택) 서버 로그 경로·DB 접근 정보를 전달.
-4. **결과 처리**:
-   - 모든 PASS → 사용자에게 보고 → 원래 §5 옵션 (다음 feature / 커밋 / etc.)으로 복귀
-   - 1개 이상 FAIL → 평가자 evidence를 그대로 보여주고 사용자 의사 확인. **"코드 수정 + 재평가" 루프는 최대 2회**. 2회 후에도 FAIL이면 step `blocked` 처리하고 사용자에게 에스컬레이션
-   - SKIP (서버 unavailable·criterion 모호) → 사용자에게 사유 보고 + 다음 행동 질문
+
+**§5.5-A: CLAUDE.md 컨벤션이 있을 때 (자동 부트스트랩)**
+
+1. `health` 명령 실행 → 0 exit 이면 이미 살아있음, **이 세션에서 spawn한 서버가 아니므로 종료하지 않음** (사용자가 따로 띄운 것일 수 있음). base_url 그대로 사용. spawn 플래그 OFF.
+2. health 실패면 `start` 명령을 background로 실행. spawn 플래그 ON. 부팅 대기 — `health`를 N초 간격으로 polling, 최대 60초. 60초 초과면 §5.5-B의 fallback으로 전환하고 spawn 플래그 OFF (이미 시작된 프로세스는 즉시 stop 시도).
+3. **부팅 실패 진단은 1회만**: 로그를 한 번 읽고 가장 가능성 높은 원인을 사용자에게 보고. 자동 수정 시도 금지. 사용자가 환경 고친 뒤 재시도.
+4. 평가자 호출 (§5.5-C 공통).
+5. 결과 처리 (§5.5-D 공통).
+6. **테스트 종료 시 stop MUST**: spawn 플래그 ON이면 `stop` 명령 실행해 서버 내림. PASS/FAIL/사용자 중단/예외 발생 — 어느 종료 경로든 `stop`이 호출되도록 finally 보장. spawn 플래그 OFF면 손대지 않음 (사용자 서버 보존).
+
+**§5.5-B: CLAUDE.md 컨벤션이 없을 때 (수동 부트스트랩)**
+
+1. 사용자에게 base URL을 묻는다 (`AskUserQuestion` 자유 입력). 사용자가 직접 띄워야 함.
+2. 평가자 호출 (§5.5-C 공통).
+3. 결과 처리 (§5.5-D 공통).
+4. 종료 시 사용자에게 "서버 직접 종료 권장" 안내만 출력 (스킬이 spawn 안 했으므로 종료도 안 함).
+
+**§5.5-C: 평가자 호출 (공통)**
+
+`Agent` tool에 `subagent_type="dev-workflow:evaluator-functional-backend"`(백엔드) 또는 `evaluator-functional`(프론트)을 지정. 프롬프트에 프로젝트 루트, base URL, criteria, (선택) 서버 로그 경로·DB 접근 정보를 전달.
+
+**§5.5-D: 결과 처리 (공통)**
+
+- 모든 PASS → 사용자에게 보고 → §5.5-A.6 / B.4 종료 절차 → 원래 §5 옵션 (다음 feature / 커밋 / etc.)으로 복귀
+- 1개 이상 FAIL → 평가자 evidence를 그대로 보여주고 사용자 의사 확인. **"코드 수정 + 재평가" 루프는 최대 2회**. 2회 후에도 FAIL이면 step `blocked` 처리하고 사용자에게 에스컬레이션. 루프 도중 서버는 그대로 유지 (재평가 마다 spawn/stop 반복 금지).
+- SKIP (서버 unavailable·criterion 모호) → 사용자에게 사유 보고 + 다음 행동 질문
 
 **금지**:
-- 평가자에게 코드 수정 도구 주지 않음 (separation 보장 — 에이전트 정의에 이미 박혀 있음)
-- 평가자가 dev server를 spawn하지 않음
-- 같은 외부 API endpoint를 비용 무시하고 반복 호출하지 않음 (criterion당 최소 호출)
+- 평가자에게 코드 수정 도구·spawn 권한 부여 (separation 보장 — 에이전트 정의에 이미 박혀 있음)
+- 같은 외부 API endpoint를 비용 무시하고 반복 호출하지 않음 (criterion당 최소 호출, 재평가 루프 시 부득이한 경우 제외)
 - step마다 자동 트리거 안 함. **사용자가 옵션을 선택했을 때만** 호출
+- 부팅 실패 시 자동 코드/환경 수정 (1회 진단 보고 후 사용자 개입 대기)
+- 자동 spawn한 서버를 stop 없이 세션 종료 (zombie 프로세스 방지 — finally MUST)
 
 ### 6. 커밋
 
