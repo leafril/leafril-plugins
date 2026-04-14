@@ -219,10 +219,33 @@ step 작업이 끝나면:
 - "다음 feature" — feature `status` DONE 갱신 → 다음 feature의 §2로 (커밋 없이)
 - "커밋" — §6 커밋만 수행 → 다시 이 질문
 - "커밋하고 다음 feature" — §6 커밋 → `status` DONE → 다음 feature §2로
+- "e2e 검증" — 살아있는 dev server에 `evaluator-functional-backend` 서브에이전트 호출 (백엔드) 또는 `evaluator-functional` 호출 (프론트엔드). 자세한 호출 절차는 §5.5
 - "수정 필요" — 사용자가 피드백을 준다 (자유 입력으로 대체)
 - "중단" — 현재 상태 저장 후 종료
 
 자유 입력 응답이면 지시대로 수행 후 §3 재보고. 애매하면 다시 질문한다 — 추측해서 진행하지 않는다.
+
+### 5.5 e2e 검증 (선택 옵션)
+
+**왜 분리된 서브에이전트인가**: 같은 컨텍스트가 코드 작성 + 라이브 호출 + 판정을 모두 하면 self-grading 편향이 재발한다. "HTTP 200 = 성공"으로 단락하면서 응답 본문의 의미적 오류(예: 요청 단어가 응답에 없음)를 놓치는 패턴이 반복됨. evaluator 서브에이전트는 fresh context이고 코드 수정 도구가 없어서 검증만 한다.
+
+**왜 step 단위가 아니라 feature 단위인가**: bootRun + 외부 API 호출 + DB 쓰기 1회당 비용·시간이 큼. 작은 step에 매번 강제하면 비효율. unit/integration 테스트가 1차 안전망 역할.
+
+**호출 절차**:
+
+1. **사전조건**: 사용자가 dev server를 띄워둔 상태여야 함. base URL (예: `http://localhost:8080`)을 사용자에게 묻는다 (`AskUserQuestion` 자유 입력). 평가자가 서버를 직접 spawn하지 않는다 — 환경 부트스트랩(env, DB, 외부 creds)은 프로젝트마다 다르고 일반화 불가.
+2. **acceptance criteria 작성**: 이번 feature의 `what`을 검증가능·이진 판정 가능한 항목 3~6개로 쪼갠다. 예: "HTTP 200", "응답 lyrics 배열에 요청 단어 1회 이상 포함", "DB row 1개", "재호출 시 row id 보존". 사용자에게 보여주고 합의 받음.
+3. **서브에이전트 호출**: `Agent` tool에 `subagent_type="dev-workflow:evaluator-functional-backend"`(백엔드) 또는 `evaluator-functional`(프론트)을 지정. 프롬프트에 프로젝트 루트, base URL, criteria, (선택) 서버 로그 경로·DB 접근 정보를 전달.
+4. **결과 처리**:
+   - 모든 PASS → 사용자에게 보고 → 원래 §5 옵션 (다음 feature / 커밋 / etc.)으로 복귀
+   - 1개 이상 FAIL → 평가자 evidence를 그대로 보여주고 사용자 의사 확인. **"코드 수정 + 재평가" 루프는 최대 2회**. 2회 후에도 FAIL이면 step `blocked` 처리하고 사용자에게 에스컬레이션
+   - SKIP (서버 unavailable·criterion 모호) → 사용자에게 사유 보고 + 다음 행동 질문
+
+**금지**:
+- 평가자에게 코드 수정 도구 주지 않음 (separation 보장 — 에이전트 정의에 이미 박혀 있음)
+- 평가자가 dev server를 spawn하지 않음
+- 같은 외부 API endpoint를 비용 무시하고 반복 호출하지 않음 (criterion당 최소 호출)
+- step마다 자동 트리거 안 함. **사용자가 옵션을 선택했을 때만** 호출
 
 ### 6. 커밋
 
