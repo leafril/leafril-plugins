@@ -2,7 +2,7 @@
 name: implement
 description: progress/{feature-id}.json의 features를 배열 순서대로 하나씩 구현한다. 기본은 feature 하나 완료 후 사용자 리뷰를 기다리는 휴먼 게이트 모드. /implement, 구현 시작 시 사용.
 disable-model-invocation: true
-argument-hint: "[--all] [feature-id]"
+argument-hint: "[feature-id]"
 allowed-tools:
   - Read
   - Write
@@ -23,8 +23,8 @@ allowed-tools:
 - **feature 하나 = 구현 단위**. 구현 후 사용자가 리뷰하고 `"DONE"`으로 전환
 - **plan에 없는 변경 금지**. 필요하면 사용자에게 먼저 확인
 - **plan 전제가 틀렸다고 판단되면 중단 후 보고**. 임의로 plan 우회 금지
-- **선행 feature가 필요하다고 판단되면 중단하고 사용자에게 `/plan`으로 선행 feature 작성을 제안**한다. `--all` 모드에서도 동일. 임의로 선행 작업을 시작하거나 /plan을 자동 호출하지 않는다
-- **평가는 사람이 한다**. 자동 evaluator 호출 없음
+- **선행 feature가 필요하다고 판단되면 중단하고 사용자에게 `/plan`으로 선행 feature 작성을 제안**한다. 임의로 선행 작업을 시작하거나 /plan을 자동 호출하지 않는다
+- **§3.5 자가 리뷰는 generator(이 skill) 책임**. evaluator 서브에이전트에 위임 안 함. 살아있는 dev server 기반 e2e 검증은 별도 evaluator skill에 맡기고 이 skill은 호출 안 함
 
 ## `implementation.steps` — 세션 간 working state
 
@@ -53,23 +53,13 @@ implement 단계가 관리하는 필드. plan은 건드리지 않는다.
 - 구현 도중 step **추가는 자유**. 재정렬·삭제는 **커밋 전 step 한정** (커밋된 step 불변성은 §4.5 참조). plan과 달리 stable contract 아님
 - 사용자에게 steps 초안을 보여주고 합의 받은 뒤 코딩 시작 (사전 점검 게이트)
 
-## 실행 모드
-
-| 모드 | 플래그 | feature 완료 후 | 커밋 |
-|------|--------|-----------------|------|
-| **단계별 (기본)** | 없음 | 변경 요약 보고 → 멈춤 | 사용자 지시 시 |
-| **일괄** | `--all` | 자동으로 다음 feature 진행 | feature 완료 시 자동 커밋 |
-
-`--all`은 사용자 리뷰가 없으므로 plan이 매우 구체적인 경우에만 권장. 빌드 실패, plan 전제 오류 발견 시 즉시 멈추고 보고.
-
 ## 입력 파싱
 
-`$ARGUMENTS`에서 `--all` 플래그 + feature id(선택) 파싱. feature id 생략 시 `progress/`에서 `"TODO"`가 남은 feature를 자동 선택. 여러 개면 AskUserQuestion으로 선택.
+`$ARGUMENTS`에서 feature id(선택) 파싱. feature id 생략 시 `progress/`에서 `"TODO"`가 남은 feature를 자동 선택. 여러 개면 AskUserQuestion으로 선택.
 
 ```
-/implement                    # 기본 모드, 자동 선택, 첫 TODO feature 1개 구현
-/implement word-karaoke       # 기본 모드, feature id 지정
-/implement --all              # 일괄 모드, 모든 TODO 연속 수행
+/implement                    # 자동 선택, 첫 TODO feature 1개 구현
+/implement word-karaoke       # feature id 지정
 ```
 
 ## 구현 전 탐색
@@ -132,7 +122,7 @@ implement 단계가 관리하는 필드. plan은 건드리지 않는다.
 1. step의 `what`을 만족시키는 **최소 변경**을 파악 — 관련 파일 탐색, 기존 패턴 확인
 2. 코드 작성 + 필요 시 테스트 작성
 3. 해당 언어/프레임워크의 기본 검증 실행 (빌드, 타입체크, 테스트). 실패하면 수정해서 재실행
-4. 3회 연속 같은 원인으로 실패하면 step status를 `blocked`로 바꾸고(`"blocker"` 사유 포함) 사용자에게 보고
+4. 3회 연속 같은 원인으로 실패하면 step status를 `blocked`로 바꾸고(`"blocker"` 사유 포함) 사용자에게 보고. **3회 임계값 근거**: 동일 원인 반복이면 자체 디버깅 범위를 넘어선 환경·plan 전제 문제일 가능성이 높음. 더 쌓이면 context·비용만 소모
 5. **자가 리뷰** (테스트 통과 후, §4로 가기 전). 이번 step 범위의 변경만 대상. **user-facing 출력 MUST** — 아래 블록 전부를 사용자에게 보이는 텍스트로 출력한다. 내부 사고로 돌리지 않는다. 이 블록 없이 §4(`AskUserQuestion`) 진입 금지.
 
    **왜 user-facing인가 (장기 역할)**: 내부화되면 "tests green = done" 단락 때문에 생략된다. 외부에 써야 ① 생성자가 diff를 한 번 훑는 의식이 강제되고, ② 사용자가 생성자의 자기 인식과 실제 변경을 대조할 수 있다. 이 역할은 향후 외부 평가자가 붙어도 pre-flight + transparency 층으로 유지된다.
@@ -182,16 +172,24 @@ step 작업이 끝나면:
 
 1. step의 `status`를 `"done"`으로 갱신 (commit 후면 `"commit"` 해시 추가)
 2. **현재 feature의 모든 step이 done이면** → feature 완료 플로우(5)로
-3. **현재 feature의 남은 step이 있으면**:
-   - **기본 모드**: step 변경 요약을 짧게 보고한 뒤 **반드시 `AskUserQuestion`을 호출**해 다음 행동을 묻는다. 평문 "대기 중"으로 끝내지 않는다. 평문 bullet으로 옵션을 나열하고 답을 기다리는 것도 위반이다 (정보가 같아 보여도 호출 형식 자체가 강제 대상). 옵션:
-     - "다음 step" — 이어서 다음 todo step 구현 (3 반복)
-     - "커밋" — §6로 가서 커밋만 수행 후 다시 이 질문
-     - "커밋하고 다음 step" — §6 커밋 → 다음 todo step 구현
-     - "수정 필요" — 사용자가 피드백을 준다 (자유 입력으로 대체)
-     - "중단" — 현재 상태 저장 후 종료
+3. **현재 feature의 남은 step이 있으면**: step 변경 요약을 짧게 보고한 뒤 §4/§5 공통 AskUserQuestion 규칙(아래 §4.4)을 따른다. scope-specific 옵션:
+   - "다음 step" — 이어서 다음 todo step 구현 (3 반복)
+   - "커밋하고 다음 step" — §6 커밋 → 다음 todo step 구현
 
-     **호출 시점에 도구가 미로드면**: 즉시 `ToolSearch query="select:AskUserQuestion"`로 로드한 뒤 호출. 이 fallback이 §0 preflight 누락 시의 마지막 안전망. 평문 단락 금지.
-   - **`--all` 모드**: 질문 없이 바로 다음 todo step으로 3 반복
+### 4.4 §4·§5 공통 AskUserQuestion 규칙
+
+§4·§5 모두 사용자에게 다음 행동을 묻는 gate에서 아래 규칙을 따른다.
+
+**호출 MUST**: 평문 "대기 중"으로 끝내지 않는다. 평문 bullet으로 옵션을 나열하고 답을 기다리는 것도 위반 (정보가 같아 보여도 호출 형식 자체가 강제 대상).
+
+**도구 미로드 fallback**: 호출 시점에 `AskUserQuestion` 스키마가 없으면 즉시 `ToolSearch query="select:AskUserQuestion"`로 로드한 뒤 호출. §0 preflight 누락 시의 마지막 안전망.
+
+**공통 옵션** (scope 무관):
+- "커밋" — §6 커밋만 수행 후 다시 이 질문
+- "수정 필요" — 사용자가 피드백을 준다 (자유 입력으로 대체)
+- "중단" — 현재 상태 저장 후 종료
+
+자유 입력 응답이면 지시대로 수행 후 §3 재보고. 애매하면 다시 질문한다 — 추측해서 진행하지 않는다.
 
 ### 4.5 step 불변성 원칙
 
@@ -202,9 +200,7 @@ step 작업이 끝나면:
 - **새 step 삽입 순서**: 아직 `todo`·`in_progress`인 구간에서는 의존 관계에 맞게 자유롭게 재배치 가능. 이미 `done`인 step의 배열 위치는 그대로 둔다.
 - **예외**: plan 전제 자체가 틀린 경우는 중단하고 `/plan`으로 돌아간다 (신규 step으로 덧붙이지 않는다).
 
-### 5. feature 완료 보고 + 대기 (기본 모드)
-
-> `--all` 모드는 이 단계 건너뛰고 6(자동 커밋) → feature status DONE → 다음 feature
+### 5. feature 완료 보고 + 대기
 
 현재 feature의 모든 step이 done이면 다음을 보고한다:
 
@@ -213,100 +209,24 @@ step 작업이 끝나면:
 3. 주요 결정 — 1~3줄
 4. 검증 결과 — 테스트/빌드 실행 결과
 5. 남은 feature 수
+6. e2e 검증 안내 — "살아있는 dev server로 검증하려면 별도 evaluator skill을 실행" 한 줄 (이 skill은 evaluator 호출 안 함)
 
-보고 직후 **반드시 `AskUserQuestion`을 호출**해 다음 행동을 묻는다. 평문 bullet으로 끝내는 것도 위반이다 (§4와 동일 규칙). 도구 미로드 시 §4의 fallback(즉시 ToolSearch 로드)을 그대로 적용한다. 옵션:
+보고 직후 §4.4 공통 AskUserQuestion 규칙을 따른다. scope-specific 옵션:
 
 - "다음 feature" — feature `status` DONE 갱신 → 다음 feature의 §2로 (커밋 없이)
-- "커밋" — §6 커밋만 수행 → 다시 이 질문
 - "커밋하고 다음 feature" — §6 커밋 → `status` DONE → 다음 feature §2로
-- "e2e 검증" — 살아있는 dev server에 `evaluator-functional-backend` 서브에이전트 호출 (백엔드) 또는 `evaluator-functional` 호출 (프론트엔드). 자세한 호출 절차는 §5.5
-- "수정 필요" — 사용자가 피드백을 준다 (자유 입력으로 대체)
-- "중단" — 현재 상태 저장 후 종료
-
-자유 입력 응답이면 지시대로 수행 후 §3 재보고. 애매하면 다시 질문한다 — 추측해서 진행하지 않는다.
-
-### 5.5 e2e 검증 (선택 옵션)
-
-**역할 분리 원칙**:
-- **Generator (이 implement skill)**: 환경 부트스트랩(spawn / health check / stop)을 책임짐. 코드 작성 + 환경 준비.
-- **Evaluator (서브에이전트)**: 살아있는 환경을 평가만. 코드 수정 도구·spawn 권한 없음. fresh context.
-
-같은 컨텍스트가 작성+e2e+판정을 모두 하면 self-grading 편향("HTTP 200 = 성공"으로 단락하며 의미적 오류 놓침)이 재발하므로 평가는 반드시 분리.
-
-**왜 step 단위가 아니라 feature 단위인가**: bootRun + 외부 API 호출 + DB 쓰기 1회당 비용·시간이 큼. 작은 step에 매번 강제하면 비효율. unit/integration 테스트가 1차 안전망 역할.
-
-**프로젝트 컨벤션 — 앱을 소유한 `CLAUDE.md`의 실행 방법 섹션**:
-
-단일 앱 repo면 루트 CLAUDE.md, 멀티모듈 repo면 각 서버 모듈의 CLAUDE.md (예: `kids-server/fooding-ai-server/CLAUDE.md`)에 실행 명령 섹션을 둔다. 관례상 `## 실행 방법` / `## 실행` / `## Getting started` / `## How to run` 등 자연어 헤더가 흔함.
-
-**parsing 방식 — nearest CLAUDE.md**: feature 위치(변경되는 파일 경로)에서 시작해 파일트리를 **위로 올라가며** 각 디렉터리의 `CLAUDE.md`를 확인. 본문에 `start:` key가 있는 block을 가진 첫 CLAUDE.md를 사용. 헤더 이름에 의존하지 않음 (body key 기반). 끝까지 못 찾으면 §5.5-B 수동.
-
-**schema**: 이 skill은 truth source가 아니다. schema 전체 정의와 검증은 `dev-tools:memory-audit`이 소유. 이 skill은 필요한 key만 blind read하고 없으면 fallback한다 (§5.5-B).
-
-**사용 key**:
-- `start` (필수 for §5.5-A): spawn 명령. 없으면 §5.5-B로 폴백.
-- `stop` (필수 for §5.5-A): teardown 명령. 없으면 §5.5-B.
-- `base_url` (필수 for §5.5-A): 평가자에게 전달할 URL. 없으면 §5.5-B.
-- `health` (선택): 있으면 health check에 사용, 없으면 base_url에 curl HEAD.
-- `log_path` (선택): 있으면 평가자에 전달해 실패 진단에 활용.
-
-**multi-module**: 각 서버 모듈이 자기 `CLAUDE.md`에 자기 실행 명령을 두는 게 기본. nearest 규칙이 자연스럽게 feature가 속한 모듈의 CLAUDE.md를 선택. 한 CLAUDE.md 안에 여러 profile(local/staging)이 필요하면 서브헤더(`### local`, `### staging`)로 block을 나눔 — consumer는 사용자에게 profile을 묻거나 default(첫 block)를 사용.
-
-**호출 절차**:
-
-1. **사전조건 결정**: feature 위치에서 시작해 파일트리를 위로 올라가며 **nearest CLAUDE.md** 탐색 → `start:` key가 있는 block 발견 → §5.5-A. 끝까지 못 찾으면 §5.5-B.
-2. **acceptance criteria 작성**: 이번 feature의 `what`을 검증가능·이진 판정 가능한 항목 3~6개로 쪼갠다. 예: "HTTP 200", "응답 lyrics 배열에 요청 단어 1회 이상 포함", "DB row 1개", "재호출 시 row id 보존". 사용자에게 보여주고 합의 받음.
-
-**§5.5-A: CLAUDE.md 컨벤션이 있을 때 (자동 부트스트랩)**
-
-1. `health` 명령 실행 → 0 exit 이면 이미 살아있음, **이 세션에서 spawn한 서버가 아니므로 종료하지 않음** (사용자가 따로 띄운 것일 수 있음). base_url 그대로 사용. spawn 플래그 OFF.
-2. health 실패면 `start` 명령을 background로 실행. spawn 플래그 ON. 부팅 대기 — `health`를 N초 간격으로 polling, 최대 60초. 60초 초과면 §5.5-B의 fallback으로 전환하고 spawn 플래그 OFF (이미 시작된 프로세스는 즉시 stop 시도).
-3. **부팅 실패 진단은 1회만**: 로그를 한 번 읽고 가장 가능성 높은 원인을 사용자에게 보고. 자동 수정 시도 금지. 사용자가 환경 고친 뒤 재시도.
-4. 평가자 호출 (§5.5-C 공통).
-5. 결과 처리 (§5.5-D 공통).
-6. **테스트 종료 시 stop MUST**: spawn 플래그 ON이면 `stop` 명령 실행해 서버 내림. PASS/FAIL/사용자 중단/예외 발생 — 어느 종료 경로든 `stop`이 호출되도록 finally 보장. spawn 플래그 OFF면 손대지 않음 (사용자 서버 보존).
-
-**§5.5-B: CLAUDE.md 컨벤션이 없을 때 (수동 부트스트랩)**
-
-1. 사용자에게 base URL을 묻는다 (`AskUserQuestion` 자유 입력). 사용자가 직접 띄워야 함.
-2. 평가자 호출 (§5.5-C 공통).
-3. 결과 처리 (§5.5-D 공통).
-4. 종료 시 사용자에게 "서버 직접 종료 권장" 안내만 출력 (스킬이 spawn 안 했으므로 종료도 안 함).
-
-**§5.5-C: 평가자 호출 (공통)**
-
-`Agent` tool에 `subagent_type="dev-workflow:evaluator-functional-backend"`(백엔드) 또는 `evaluator-functional`(프론트)을 지정. 프롬프트에 프로젝트 루트, base URL, criteria, (선택) 서버 로그 경로·DB 접근 정보를 전달.
-
-**§5.5-D: 결과 처리 (공통)**
-
-- 모든 PASS → 사용자에게 보고 → §5.5-A.6 / B.4 종료 절차 → 원래 §5 옵션 (다음 feature / 커밋 / etc.)으로 복귀
-- 1개 이상 FAIL → 평가자 evidence를 그대로 보여주고 사용자 의사 확인. **"코드 수정 + 재평가" 루프는 최대 2회**. 2회 후에도 FAIL이면 step `blocked` 처리하고 사용자에게 에스컬레이션. 루프 도중 서버는 그대로 유지 (재평가 마다 spawn/stop 반복 금지).
-- SKIP (서버 unavailable·criterion 모호) → 사용자에게 사유 보고 + 다음 행동 질문
-
-**금지**:
-- 평가자에게 코드 수정 도구·spawn 권한 부여 (separation 보장 — 에이전트 정의에 이미 박혀 있음)
-- 같은 외부 API endpoint를 비용 무시하고 반복 호출하지 않음 (criterion당 최소 호출, 재평가 루프 시 부득이한 경우 제외)
-- step마다 자동 트리거 안 함. **사용자가 옵션을 선택했을 때만** 호출
-- 부팅 실패 시 자동 코드/환경 수정 (1회 진단 보고 후 사용자 개입 대기)
-- 자동 spawn한 서버를 stop 없이 세션 종료 (zombie 프로세스 방지 — finally MUST)
 
 ### 6. 커밋
 
-트리거:
-- **기본 모드**: 사용자가 명시적으로 지시했을 때만
-- **`--all` 모드**: 각 feature 구현 끝나면 자동
+트리거: §4/§5의 "커밋" 또는 "커밋하고 다음 X" 선택 시.
 
-절차:
-1. `git status`로 변경 확인
-2. `git add`로 현재 feature 범위 파일만 스테이지. 무관한 변경이 섞여 있으면 기본 모드는 확인, `--all`은 멈추고 보고
-3. 커밋 메시지 초안 — feature의 `what`을 제목으로. **"왜" 비자명한 결정이 있었으면 본문에 포함** (plan.notes.decisions가 없는 영역의 HOW 결정 근거)
-4. 기본 모드는 초안 승인 받음. `--all`은 그대로 사용
-5. `git commit` → hash 보고
-6. `--no-verify` 금지. hook 실패 시 원인 파악 후 재시도
+- **범위**: 현재 feature의 변경 파일만 스테이지. 무관한 변경이 섞여 있으면 사용자에게 확인 후 분리
+- **메시지**: 제목에 feature의 `what` 인용. HOW 결정의 "왜"가 비자명하면 본문에 포함 (plan.notes.decisions가 커버하지 않는 영역)
+- 나머지 git 동작(status 확인, hash 보고, `--no-verify` 금지, hook 실패 처리 등)은 Claude Code 글로벌 커밋 규칙 따름
 
 ### 7. feature status 갱신 + 다음 feature
 
-feature가 "DONE" 확정되면(사용자 OK 또는 `--all` 커밋 직후):
+feature가 "DONE" 확정되면 (사용자 OK):
 
 1. `progress/{feature-id}.json`의 해당 feature `status`를 `"TODO"` → `"DONE"`
 2. `implementation.steps`는 남겨둔다 — 감사·회고용
@@ -315,83 +235,14 @@ feature가 "DONE" 확정되면(사용자 OK 또는 `--all` 커밋 직후):
 
 ## `implementation.steps` 작성 가이드
 
-### 좋은 step 예시
-
-- "DDL + Entity + Repository"
-- "외부 API 클라이언트 + 응답 파서"
-- "통합 테스트 (외부 API mock)"
-
-### 나쁜 step 예시
-
-- "`domain/foo/BarEntity.<ext>` 작성" — 특정 파일 경로 노출, 코드가 정답
-- "retry 로직 추가" — 너무 구체, 상위 step의 일부
-- "계획 수립" — 메타 step
-
-### 갱신 원칙
-
-- **step 시작 시**: `in_progress`로
-- **step 완료 시**: `done`으로, 필요 시 `commit` 해시 추가
-- **막힐 때**: `blocked` + `blocker` 사유
-- **plan과 다르게 쪼개야 한다고 판단되면**: 사용자에게 알리고 합의 후 steps 재작성
-
-### steps 재작성 판단 기준 (관측 신호)
-
-다음 중 하나라도 관측되면 재작성을 사용자에게 제안한다:
-
-- 한 step의 `in_progress` 기간이 **한 세션(약 반나절)을 넘길 것으로 예상**
-- 한 step에서 **커밋을 3개 이상** 끊어야 의미가 맞음 (= step이 너무 큼)
-- 두 step이 같은 파일군을 반복 수정 — 경계가 잘못 그어짐 (병합 또는 재분할)
-- step의 `what`이 구현 중 관측한 실제 작업과 어긋남 (예: "API 클라이언트"로 시작했는데 실제로는 DTO 스키마 설계가 본질)
-- 한 step이 `blocked` 3회 이상 — 선행 조건이 빠진 신호
-
-### step 추가 시나리오
-
-구현 중·구현 후에 새 작업이 필요하다고 판단되는 경우. **공통 원칙**: 임의 추가 금지. 사용자 합의 후에만 steps 배열 수정.
-
-**(A) 구현 도중 plan 구멍 발견 — 진행 중 step에 추가 필요**
-
-현재 step을 끝내기 위해 새 작업이 필수인 경우(예: 필요한 helper가 없어 먼저 만들어야 함).
-
-1. 현재 step을 `blocked`로 전환하고 `blocker`에 사유 기록
-2. 새 step 초안을 현재 step **앞**에 삽입(전제 관계)하는 안을 사용자에게 보고
-3. 합의되면 steps 배열 재작성 → 새 step부터 §3 진행 → 완료 후 기존 step으로 복귀(`in_progress`로 되돌림)
-
-**(B) 구현 도중 plan 구멍 발견 — 현재 step과 독립, 후속으로 처리 가능**
-
-현재 step 완수에는 지장 없지만 feature 내 다른 필요 작업이 드러난 경우.
-
-1. 현재 step 그대로 §3 완료
-2. §4 step 완료 처리에서 사용자에게 "신규 step 추가 안" 보고 → 합의 후 todo 배열 끝에 삽입
-3. 이어서 다음 todo로 진행
-
-**(C) feature 완료 후 리팩토링·버그픽스 필요**
-
-모든 feature의 step이 `done`, §5 보고까지 끝난 상태에서 추가 작업이 드러난 경우.
-
-판단 기준:
-- **같은 feature 범위 내 + 플랜 의도의 미완성**(예: feature의 `what`이 커버하는 동작인데 누락·버그) → feature `status`를 `TODO`로 되돌리고, `implementation.steps`에 새 step 추가 후 §3부터 재진행. 사용자 합의 필수
-- **같은 feature 범위 밖 리팩토링/주변 정리** → 현재 plan에 **새 feature** 추가가 맞으면 `/plan`으로 돌아가 `features`에 append. 범위가 크면 **별도 plan** 생성
-- **다른 feature 구현 중 발견된 회귀·버그** → 회귀를 유발한 feature로 돌아가 (A)/(B) 처리
-
-**(D) plan 전제가 틀렸다고 판단 — steps 대폭 변경 필요**
-
-§4.5 예외 조항 참조. 중단하고 `/plan`으로 돌아간다.
-
-1. 현재 작업 중단하고 사용자에게 보고
-2. `/plan`으로 돌아가 `goal`/`features`/`notes` 재정렬 → plan 합의 후 implement 재진입
-
-**공통 금지**
-- 사용자 합의 없이 steps 배열 수정
-- 범위 밖 작업을 "하는 김에" 현재 step에 끼워 넣기
-- `status: DONE` 처리된 feature에 몰래 step 추가 (감사 추적 깨짐 — 반드시 `TODO`로 되돌리고 합의)
+좋은/나쁜 step 예시·status 갱신 원칙·재작성 판단 기준·추가 시나리오(A/B/C/D)는 [references/steps-authoring.md](references/steps-authoring.md) 참조. §2(a) steps 초안 작성 시, 그리고 §3·§4에서 배열 변경이 필요하다고 판단될 때 해당 참조를 연다.
 
 ## 하지 않는 것
 
-- 기본 모드에서 feature 1개 끝난 뒤 자동으로 다음 feature 진행
-- 기본 모드에서 자동 커밋
+- 사용자 확인 없이 다음 feature로 자동 진행
+- 사용자 지시 없이 자동 커밋
 - Plan 범위 밖 리팩토링·코드 정리
 - 컨벤션 외 주관적 개선
-- 자동 evaluator 호출 (평가는 사용자)
 - feature 순서 임의 변경 (배열 순서 = 구현 순서)
 - `implementation.steps`에 파일 manifest·API 엔드포인트·클래스 시그니처 기록 (코드가 정답)
 - plan의 `goal`·`features`·`notes` 수정 (plan 전제가 틀리면 중단 후 `/plan`으로 돌아감)
