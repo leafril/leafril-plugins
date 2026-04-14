@@ -235,25 +235,26 @@ step 작업이 끝나면:
 
 **왜 step 단위가 아니라 feature 단위인가**: bootRun + 외부 API 호출 + DB 쓰기 1회당 비용·시간이 큼. 작은 step에 매번 강제하면 비효율. unit/integration 테스트가 1차 안전망 역할.
 
-**프로젝트 컨벤션 — `CLAUDE.md`의 `## Local dev server` 섹션**:
+**프로젝트 컨벤션 — 프로젝트 루트 `CLAUDE.md`의 실행 방법 섹션**:
 
-스킬은 프로젝트 루트의 `CLAUDE.md`에서 아래 구조의 섹션을 읽어 사용한다:
+프로젝트 루트(모듈 레벨 아님)의 `CLAUDE.md`에서 실행 명령이 담긴 섹션을 찾는다. 관례상 `## 실행 방법` / `## 실행` / `## Getting started` / `## How to run` 등 자연어 헤더가 흔함.
 
-```
-## Local dev server
+**parsing 방식**: 헤더 이름에 의존하지 않는다. 본문에 `start:` key가 있는 블록을 찾아 그 안의 `start`/`stop`/`base_url`/`health`/`log_path` 등 key-value 라인을 읽는다. 이렇게 하면 프로젝트마다 헤더 이름이 달라도 동작.
 
-- start: <서버 띄우는 명령 (env source 포함)>
-- health: <살아있는지 확인하는 명령 (예: curl -fs URL/health)>
-- stop: <서버 종료 명령 (포트 기반 kill 등)>
-- base_url: <예: http://localhost:8080>
-- log_path: (선택) <stdout/stderr 리다이렉트 경로>
-```
+**schema**: 이 skill은 truth source가 아니다. schema 전체 정의와 검증은 `dev-tools:memory-audit`이 소유. 이 skill은 필요한 key만 blind read하고 없으면 fallback한다 (§5.5-B).
 
-이 섹션이 있으면 자동 spawn 시도. 없으면 사용자에게 띄워달라고 묻는다. drift 방지를 위해 build script(Makefile/gradle task/package.json scripts)에 동일 명령을 두고 CLAUDE.md는 그걸 호출하는 한 줄로 두는 게 권장.
+**사용 key**:
+- `start` (필수 for §5.5-A): spawn 명령. 없으면 §5.5-B로 폴백.
+- `stop` (필수 for §5.5-A): teardown 명령. 없으면 §5.5-B.
+- `base_url` (필수 for §5.5-A): 평가자에게 전달할 URL. 없으면 §5.5-B.
+- `health` (선택): 있으면 health check에 사용, 없으면 base_url에 curl HEAD.
+- `log_path` (선택): 있으면 평가자에 전달해 실패 진단에 활용.
+
+**multi-module**: 한 프로젝트에 여러 서버가 있으면 실행 방법 섹션 안에 서브헤더(`### fooding-ai-server`, `### admin-server` 등)로 여러 블록이 있을 수 있다. feature가 어느 모듈에 속하는지 `progress` 파일 + 코드 경로로 추정하거나 사용자에게 묻는다.
 
 **호출 절차**:
 
-1. **사전조건 결정**: `CLAUDE.md`의 `## Local dev server` 섹션 읽기. 있으면 §5.5-A로, 없으면 §5.5-B로.
+1. **사전조건 결정**: 프로젝트 루트 `CLAUDE.md`에서 실행 명령 블록(본문에 `start:` key가 있는 block) 탐색. 여러 서브헤더(multi-module)면 feature 위치로 해당 모듈 block을 고름. 있으면 §5.5-A로, 없으면 §5.5-B로.
 2. **acceptance criteria 작성**: 이번 feature의 `what`을 검증가능·이진 판정 가능한 항목 3~6개로 쪼갠다. 예: "HTTP 200", "응답 lyrics 배열에 요청 단어 1회 이상 포함", "DB row 1개", "재호출 시 row id 보존". 사용자에게 보여주고 합의 받음.
 
 **§5.5-A: CLAUDE.md 컨벤션이 있을 때 (자동 부트스트랩)**

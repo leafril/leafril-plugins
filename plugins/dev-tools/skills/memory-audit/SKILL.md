@@ -77,7 +77,12 @@ CLAUDE.md에 담을 정보를 세 레벨로 구분한다:
 
 ### Phase 3: 구조 감사
 
-파일 단위로 구조적 품질을 검사한다:
+파일 단위로 구조적 품질 + consumer 스킬이 기대하는 필수 섹션을 검사한다:
+
+- 구조적 품질: 아래 표의 기준
+- **필수 섹션 점검**: 프로젝트 루트 `CLAUDE.md`에 한해, 다른 스킬이 의존하는 섹션이 스펙대로 있는지 확인. 상세 spec은 [references/required-sections.md](references/required-sections.md) 참고. 현재 등록된 섹션: 실행 방법(`start`/`stop`/`base_url` 등 key). 누락·malformed 시 FAIL/WARN을 보고서의 **수정 추천** 또는 **추가 추천**에 포함.
+
+
 
 | 기준 | 권장 | 이유 |
 |------|------|------|
