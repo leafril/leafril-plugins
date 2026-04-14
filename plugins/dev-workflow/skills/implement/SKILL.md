@@ -94,6 +94,15 @@ implement 단계가 관리하는 필드. plan은 건드리지 않는다.
 
 ## 실행 절차
 
+### 0. 도구 preflight (skill 진입 직후 1회 MUST)
+
+이 스킬은 사용자에게 선택지를 묻는 단계(§4·§5·§2(a))에서 `AskUserQuestion` 호출을 **MUST**로 강제한다. 이 도구는 일부 환경에서 deferred 상태로 시작하므로 **§1 시작 전에 미리 로드**한다.
+
+1. 사용 가능한 도구 목록에서 `AskUserQuestion` 스키마가 보이지 않으면 즉시 `ToolSearch query="select:AskUserQuestion"`로 로드.
+2. 로드 실패 시 사용자에게 보고하고 중단(평문 bullet으로 대체 금지 — 그 회피가 §4 위반의 직접 원인이다).
+
+이 preflight를 건너뛰면 §4 도달 시 도구 미로드 → 친숙한 평문으로 단락 → MUST 위반의 패턴이 반복된다. 한 번 frontload하면 결정 시점의 friction 0.
+
 ### 1. Plan 읽기
 
 1. `progress/{feature-id}.json` 읽기. 파일 없으면 중단 후 보고
@@ -174,12 +183,14 @@ step 작업이 끝나면:
 1. step의 `status`를 `"done"`으로 갱신 (commit 후면 `"commit"` 해시 추가)
 2. **현재 feature의 모든 step이 done이면** → feature 완료 플로우(5)로
 3. **현재 feature의 남은 step이 있으면**:
-   - **기본 모드**: step 변경 요약을 짧게 보고한 뒤 **반드시 `AskUserQuestion`을 호출**해 다음 행동을 묻는다. 평문 "대기 중"으로 끝내지 않는다. 옵션:
+   - **기본 모드**: step 변경 요약을 짧게 보고한 뒤 **반드시 `AskUserQuestion`을 호출**해 다음 행동을 묻는다. 평문 "대기 중"으로 끝내지 않는다. 평문 bullet으로 옵션을 나열하고 답을 기다리는 것도 위반이다 (정보가 같아 보여도 호출 형식 자체가 강제 대상). 옵션:
      - "다음 step" — 이어서 다음 todo step 구현 (3 반복)
      - "커밋" — §6로 가서 커밋만 수행 후 다시 이 질문
      - "커밋하고 다음 step" — §6 커밋 → 다음 todo step 구현
      - "수정 필요" — 사용자가 피드백을 준다 (자유 입력으로 대체)
      - "중단" — 현재 상태 저장 후 종료
+
+     **호출 시점에 도구가 미로드면**: 즉시 `ToolSearch query="select:AskUserQuestion"`로 로드한 뒤 호출. 이 fallback이 §0 preflight 누락 시의 마지막 안전망. 평문 단락 금지.
    - **`--all` 모드**: 질문 없이 바로 다음 todo step으로 3 반복
 
 ### 4.5 step 불변성 원칙
@@ -203,7 +214,7 @@ step 작업이 끝나면:
 4. 검증 결과 — 테스트/빌드 실행 결과
 5. 남은 feature 수
 
-보고 직후 **반드시 `AskUserQuestion`을 호출**해 다음 행동을 묻는다. 평문 "대기 중"으로 끝내지 않는다. 옵션:
+보고 직후 **반드시 `AskUserQuestion`을 호출**해 다음 행동을 묻는다. 평문 bullet으로 끝내는 것도 위반이다 (§4와 동일 규칙). 도구 미로드 시 §4의 fallback(즉시 ToolSearch 로드)을 그대로 적용한다. 옵션:
 
 - "다음 feature" — feature `status` DONE 갱신 → 다음 feature의 §2로 (커밋 없이)
 - "커밋" — §6 커밋만 수행 → 다시 이 질문
