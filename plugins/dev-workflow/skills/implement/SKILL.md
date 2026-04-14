@@ -24,7 +24,7 @@ allowed-tools:
 - **plan에 없는 변경 금지**. 필요하면 사용자에게 먼저 확인
 - **plan 전제가 틀렸다고 판단되면 중단 후 보고**. 임의로 plan 우회 금지
 - **선행 feature가 필요하다고 판단되면 중단하고 사용자에게 `/plan`으로 선행 feature 작성을 제안**한다. 임의로 선행 작업을 시작하거나 /plan을 자동 호출하지 않는다
-- **§3.5 자가 리뷰는 generator(이 skill) 책임**. evaluator 서브에이전트에 위임 안 함. 살아있는 dev server 기반 e2e 검증은 별도 evaluator skill에 맡기고 이 skill은 호출 안 함
+- **§3.5 자가 리뷰는 generator(이 skill) 책임**. evaluator 서브에이전트에 위임 안 함. **feature 완료 시점**(§5)에는 evaluator-e2e + evaluator-code 체인을 자동 호출 (사용자 선택 없음)
 
 ## `implementation.steps` — 세션 간 working state
 
@@ -200,7 +200,7 @@ step 작업이 끝나면:
 - **새 step 삽입 순서**: 아직 `todo`·`in_progress`인 구간에서는 의존 관계에 맞게 자유롭게 재배치 가능. 이미 `done`인 step의 배열 위치는 그대로 둔다.
 - **예외**: plan 전제 자체가 틀린 경우는 중단하고 `/plan`으로 돌아간다 (신규 step으로 덧붙이지 않는다).
 
-### 5. feature 완료 보고 + 대기
+### 5. feature 완료 보고 + 평가 체인
 
 현재 feature의 모든 step이 done이면 다음을 보고한다:
 
@@ -209,9 +209,40 @@ step 작업이 끝나면:
 3. 주요 결정 — 1~3줄
 4. 검증 결과 — 테스트/빌드 실행 결과
 5. 남은 feature 수
-6. e2e 검증 안내 — "살아있는 dev server로 검증하려면 별도 evaluator skill을 실행" 한 줄 (이 skill은 evaluator 호출 안 함)
 
-보고 직후 §4.4 공통 AskUserQuestion 규칙을 따른다. scope-specific 옵션:
+보고 직후 평가 체인이 자동 실행된다 (사용자 선택 없음).
+
+#### 5.1 Trivial skip 휴리스틱
+
+이번 feature 변경 파일이 **모두** 아래 패턴에만 매칭되면 평가 체인 skip하고 한 줄 안내 출력 후 §5.3로:
+- 비코드 문서: `*.md`, `*.txt`, `*.rst`, `docs/**`
+- 테스트 전용 변경: `**/test/**`, `**/tests/**`, `**/__tests__/**`, `*_test.*`, `*.test.*`, `*.spec.*`
+
+위 패턴 외 파일이 1개라도 있으면 §5.2 평가 체인으로.
+
+#### 5.2 평가 체인 (auto-trigger)
+
+1. **evaluator-e2e 호출**:
+   - feature 위치(변경 파일 경로)에서 시작해 위로 올라가며 nearest `CLAUDE.md`에서 `start:` key 있는 block 탐색 (실행 방법 섹션)
+   - 있으면 자동 spawn (`start` → `health` polling, 최대 60초). 없으면 사용자에게 base URL을 묻고 사용자가 직접 spawn
+   - 평가자(`Agent` tool, `subagent_type="dev-workflow:evaluator-e2e"`)에 base URL + acceptance criteria + log_path 전달
+   - **자동 spawn한 서버는 finally MUST stop**. 사용자가 띄운 기존 서버는 보존
+   - 부팅 실패 시 **1회 진단 보고 후 사용자 개입 요청** (자동 환경 수정 금지)
+
+2. **e2e 결과 분기**:
+   - PASS → 다음 단계(코드 리뷰)
+   - FAIL → evaluator-code skip, 평가자 evidence 그대로 출력 후 §5.3로
+
+3. **evaluator-code 호출** (e2e PASS 시만):
+   - feature scope diff 산출 (첫 step commit의 parent ~ HEAD)
+   - 평가자(`subagent_type="dev-workflow:evaluator-code"`)에 diff + progress.json + plan.goal 전달
+   - 검증 초점: cross-step 일관성, 누적 드리프트, scope 적합성. 파일 단위 스타일은 self-review가 이미 봤으므로 재검증 안 함
+
+4. **평가 결과 보고** — e2e + code review의 PASS/FAIL/evidence 요약
+
+#### 5.3 후속 결정
+
+평가 결과(또는 trivial skip 안내) 직후 §4.4 공통 AskUserQuestion 규칙을 따른다. scope-specific 옵션:
 
 - "다음 feature" — feature `status` DONE 갱신 → 다음 feature의 §2로 (커밋 없이)
 - "커밋하고 다음 feature" — §6 커밋 → `status` DONE → 다음 feature §2로
