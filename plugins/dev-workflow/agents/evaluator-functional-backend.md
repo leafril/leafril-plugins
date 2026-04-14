@@ -31,10 +31,10 @@ criteria 예:
 
 ```json
 [
-  { "criterion": "POST /api/v1/admin/fooding/word-songs 응답이 HTTP 200" },
-  { "criterion": "응답 본문의 lyrics 배열에 요청한 englishWord가 1회 이상 포함됨" },
-  { "criterion": "fooding.word_song에 word_id=N row가 정확히 1개" },
-  { "criterion": "같은 wordId로 재호출 시 row id가 보존되고 s3_key만 변경됨" }
+  { "criterion": "POST {endpoint} 응답이 HTTP 200" },
+  { "criterion": "응답 본문의 {field} 배열에 요청한 {input value}가 1회 이상 포함됨" },
+  { "criterion": "{schema}.{table}에 {key}=N row가 정확히 1개" },
+  { "criterion": "같은 입력으로 재호출 시 row id가 보존되고 일부 필드만 변경됨 (멱등성)" }
 ]
 ```
 
@@ -83,7 +83,7 @@ POST/PUT/DELETE 등 부작용을 만드는 endpoint를 criterion이 호출하면
 ```
 RESULTS:
 - criterion: "POST 응답이 HTTP 200" | result: PASS | evidence: "curl ... 결과 HTTP 200, body.success=true"
-- criterion: "응답 lyrics에 'sun' 포함" | result: FAIL | evidence: "lyrics[0].textEn='ISLAND ISLAND...', 'sun' 미포함. 서버 로그(/tmp/fooding-ai.log:127): 'LYRIA_LYRICS_RAW>>>[5.1:] island...'"
+- criterion: "응답 items에 요청 키워드 포함" | result: FAIL | evidence: "items[0].name='other', 'requested-keyword' 미포함. 서버 로그({log_path}:127): 'EXTERNAL_RAW>>>...'"
 - criterion: "DB row 1개" | result: PASS | evidence: "psql SELECT count(*) ... = 1"
 ```
 

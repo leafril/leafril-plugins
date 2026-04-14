@@ -2,7 +2,7 @@
 
 memory-audit이 CLAUDE.md에서 검증하는 항목. 다른 스킬들이 이 섹션을 blind-read해서 사용하므로, audit이 schema 정합성을 보장하는 truth source 역할.
 
-**적용 범위**: 해당 앱을 소유한 `CLAUDE.md`. 단일 앱 repo면 루트 CLAUDE.md, 멀티모듈 repo면 각 서버 모듈의 CLAUDE.md (예: `kids-server/fooding-ai-server/CLAUDE.md`). consumer 스킬은 feature 위치에서 시작해 파일트리를 **위로 올라가며** 가장 가까운 `start:` key 있는 block을 찾는 "nearest CLAUDE.md" 규칙으로 탐색.
+**적용 범위**: 해당 앱을 소유한 `CLAUDE.md`. 단일 앱 repo면 루트 CLAUDE.md, 멀티모듈 repo면 각 서버 모듈의 CLAUDE.md (예: `apps/{module}/CLAUDE.md`). consumer 스킬은 feature 위치에서 시작해 파일트리를 **위로 올라가며** 가장 가까운 `start:` key 있는 block을 찾는 "nearest CLAUDE.md" 규칙으로 탐색.
 
 **consumer 스킬은 이 파일을 runtime에 Read하지 않는다.** cross-plugin 의존을 피하기 위해 consumer는 CLAUDE.md를 직접 blind read하고, 없거나 malformed면 fallback. audit은 주기적 실행 시 CLAUDE.md가 이 spec을 충족하는지 검증.
 
@@ -16,17 +16,17 @@ memory-audit이 CLAUDE.md에서 검증하는 항목. 다른 스킬들이 이 섹
 
 **헤더 이름**: 자연어 자유. 예시 — `## 실행 방법`, `## 실행`, `## Getting started`, `## How to run`. consumer는 헤더 이름이 아니라 본문의 `start:` key 존재로 블록을 찾는다.
 
-**multi-module 처리**: 한 프로젝트에 실행 대상 서버가 여러 개면 서브헤더(`### fooding-ai-server`, `### admin-server` 등)로 분리된 block을 여러 개 둔다. 각 block이 독립적 schema를 가짐.
+**multi-module 처리**: 한 프로젝트에 실행 대상 서버가 여러 개면 서브헤더(`### {module-a}`, `### {module-b}` 등)로 분리된 block을 여러 개 둔다. 각 block이 독립적 schema를 가짐.
 
 **key schema** (block 당):
 
 | key | 필수성 | 내용 | 예시 |
 |-----|--------|------|------|
-| `start` | MUST (자동 spawn 사용 시) | 서버 띄우는 명령. env source + background 실행 포함 | `source kids-server/fooding-ai-server/.env && ./gradlew ... > /tmp/fooding-ai.log 2>&1 &` |
+| `start` | MUST (자동 spawn 사용 시) | 서버 띄우는 명령. env source + background 실행 포함 | `source {module}/.env && {build-tool} run > /tmp/{module}.log 2>&1 &` |
 | `stop` | MUST | 서버 종료 명령. 포트 기반 kill 권장 | `lsof -ti :8080 \| xargs -r kill -TERM` |
 | `base_url` | MUST | consumer가 평가자에 전달할 기본 URL | `http://localhost:8080` |
 | `health` | SHOULD | 살아있음 확인 명령 (exit 0 = 살아있음) | `curl -fsS -o /dev/null http://localhost:8080/v3/api-docs` |
-| `log_path` | SHOULD | stdout/stderr 리다이렉트 경로. 진단에 활용 | `/tmp/fooding-ai.log` |
+| `log_path` | SHOULD | stdout/stderr 리다이렉트 경로. 진단에 활용 | `/tmp/{module}.log` |
 | `env_required` | MAY | 필수 환경변수 목록. 사용자 트러블슈팅 안내용 | `FOODING_LYRIA_PROJECT`, `MYSQL_DATASOURCE_URL` |
 | `adc` / `creds` | MAY | 외부 서비스 인증 준비 안내 | `gcloud auth application-default login 1회 필요` |
 | `stack` | SHOULD | functional evaluator dispatch 신호. `backend` (HTTP·DB) 또는 `frontend` (Playwright DOM). 미지정 시 functional evaluator skip되고 code review만 진행 | `backend` |
@@ -36,13 +36,13 @@ memory-audit이 CLAUDE.md에서 검증하는 항목. 다른 스킬들이 이 섹
 ```
 ## 실행 방법
 
-### fooding-ai-server (local)
+### {module-name} (local)
 
-- start: `cd /Users/.../develop && source kids-server/fooding-ai-server/.env && ./gradlew :kids-server:fooding-ai-server:bootRun --args='--spring.profiles.active=local' > /tmp/fooding-ai.log 2>&1 &`
-- health: `curl -fsS -o /dev/null http://localhost:8080/v3/api-docs`
-- stop: `lsof -ti :8080 | xargs -r kill -TERM`
-- base_url: `http://localhost:8080`
-- log_path: `/tmp/fooding-ai.log`
+- start: `cd {repo-root} && source {module}/.env && {build-tool run command} > /tmp/{module}.log 2>&1 &`
+- health: `curl -fsS -o /dev/null http://localhost:{port}/health`
+- stop: `lsof -ti :{port} | xargs -r kill -TERM`
+- base_url: `http://localhost:{port}`
+- log_path: `/tmp/{module}.log`
 - stack: backend
 ```
 

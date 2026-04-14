@@ -53,9 +53,9 @@ functional evaluator와 동일한 RESULTS: 형식:
 
 ```
 RESULTS:
-- finding: "step 2 commit abc123이 SongComposer 인터페이스를 만들었는데 step 3 commit def456이 동일 시그니처를 재선언" | result: FAIL | evidence: "domain/song/SongComposer.kt:5 (step 2) vs domain/song/compose/SongComposer.kt:8 (step 3)"
-- finding: "feature.what '단어별 노래 저장' 대비 변경 범위 적합" | result: PASS | evidence: "변경 파일 모두 song 도메인 + storage layer에 한정, 무관 모듈 변경 0"
-- finding: "step 1 commit이 추가한 helper foo()를 step 4 commit이 동일 책임 helper bar() 재구현" | result: FAIL | evidence: "kids/client/song/lyria/LyriaClient.kt:42 vs kids/client/song/gemini/GeminiLyricsTranslator.kt:38"
+- finding: "step 2 commit abc123이 인터페이스 X를 만들었는데 step 3 commit def456이 동일 시그니처를 재선언" | result: FAIL | evidence: "{domain}/X.{ext}:5 (step 2) vs {subpackage}/X.{ext}:8 (step 3)"
+- finding: "feature.what 대비 변경 범위 적합" | result: PASS | evidence: "변경 파일 모두 해당 도메인 + storage layer에 한정, 무관 모듈 변경 0"
+- finding: "step 1 commit이 추가한 helper foo()를 step 4 commit이 동일 책임 helper bar() 재구현" | result: FAIL | evidence: "{client_a}/A.{ext}:42 vs {client_b}/B.{ext}:38"
 ```
 
 각 finding은 PASS / FAIL / SKIP 중 하나. evidence에 commit hash + 파일 경로:줄 인용.
