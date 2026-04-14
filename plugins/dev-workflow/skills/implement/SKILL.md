@@ -230,11 +230,11 @@ step 작업이 끝나면:
    - `stack:` 미정의 또는 위 둘 외 값 → functional evaluator skip하고 사용자에게 한 줄 안내, **3번 evaluator-code로 직행**
 
 3. **functional evaluator 호출** (stack 매칭 시만):
-   - 자동 spawn (`start` → `health` polling, 최대 60초). 없으면 사용자에게 base URL을 묻고 사용자가 직접 spawn
-   - `Agent` tool로 dispatch된 평가자에 base URL + acceptance criteria + log_path 전달
-   - **자동 spawn한 서버는 finally MUST stop**. 사용자가 띄운 기존 서버는 보존
-   - 부팅 실패 시 **1회 진단 보고 후 사용자 개입 요청** (자동 환경 수정 금지)
+   - `Agent` tool로 dispatch. 평가자에 **실행 방법 block 전체**(`start`/`health`/`stop`/`base_url`/`log_path` 등) + acceptance criteria + (선택) DB 접근 정보 전달
+   - **환경 부트스트랩(spawn/health/stop) 책임은 평가자**. implement는 명령 정보만 전달, 직접 spawn 안 함
+   - 평가자가 자체 health check → 필요 시 spawn → 평가 → finally stop 수행
    - 결과: PASS → 4번. FAIL → evaluator-code skip, evidence 그대로 출력 후 §5.3로
+   - SKIP(평가자가 boot timeout 등으로 환경 확보 실패) → evaluator-code skip, evidence 보고 후 §5.3로
 
 4. **evaluator-code 호출** (functional이 PASS이거나 stack 미정의로 skip된 경우):
    - feature scope diff 산출 (첫 step commit의 parent ~ HEAD)
