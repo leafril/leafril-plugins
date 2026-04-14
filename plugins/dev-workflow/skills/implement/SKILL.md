@@ -24,7 +24,7 @@ allowed-tools:
 - **plan에 없는 변경 금지**. 필요하면 사용자에게 먼저 확인
 - **plan 전제가 틀렸다고 판단되면 중단 후 보고**. 임의로 plan 우회 금지
 - **선행 feature가 필요하다고 판단되면 중단하고 사용자에게 `/plan`으로 선행 feature 작성을 제안**한다. 임의로 선행 작업을 시작하거나 /plan을 자동 호출하지 않는다
-- **§3.5 자가 리뷰는 generator(이 skill) 책임**. evaluator 서브에이전트에 위임 안 함. **feature 완료 시점**(§5)에는 evaluator-e2e + evaluator-code 체인을 자동 호출 (사용자 선택 없음)
+- **§3.5 자가 리뷰는 generator(이 skill) 책임**. evaluator 서브에이전트에 위임 안 함. **feature 완료 시점**(§5)에는 functional evaluator(stack에 따라 backend/frontend) + evaluator-code 체인을 자동 호출 (사용자 선택 없음)
 
 ## `implementation.steps` — 세션 간 working state
 
@@ -222,23 +222,26 @@ step 작업이 끝나면:
 
 #### 5.2 평가 체인 (auto-trigger)
 
-1. **evaluator-e2e 호출**:
-   - feature 위치(변경 파일 경로)에서 시작해 위로 올라가며 nearest `CLAUDE.md`에서 `start:` key 있는 block 탐색 (실행 방법 섹션)
-   - 있으면 자동 spawn (`start` → `health` polling, 최대 60초). 없으면 사용자에게 base URL을 묻고 사용자가 직접 spawn
-   - 평가자(`Agent` tool, `subagent_type="dev-workflow:evaluator-e2e"`)에 base URL + acceptance criteria + log_path 전달
+1. **실행 방법 block 탐색**: feature 위치(변경 파일 경로)에서 시작해 위로 올라가며 nearest `CLAUDE.md`에서 `start:` key 있는 block 탐색.
+
+2. **stack 분기**: block의 `stack:` key 값으로 functional evaluator dispatch.
+   - `stack: backend` → `evaluator-functional-backend` (HTTP·DB·log)
+   - `stack: frontend` → `evaluator-functional-frontend` (Playwright DOM)
+   - `stack:` 미정의 또는 위 둘 외 값 → functional evaluator skip하고 사용자에게 한 줄 안내, **3번 evaluator-code로 직행**
+
+3. **functional evaluator 호출** (stack 매칭 시만):
+   - 자동 spawn (`start` → `health` polling, 최대 60초). 없으면 사용자에게 base URL을 묻고 사용자가 직접 spawn
+   - `Agent` tool로 dispatch된 평가자에 base URL + acceptance criteria + log_path 전달
    - **자동 spawn한 서버는 finally MUST stop**. 사용자가 띄운 기존 서버는 보존
    - 부팅 실패 시 **1회 진단 보고 후 사용자 개입 요청** (자동 환경 수정 금지)
+   - 결과: PASS → 4번. FAIL → evaluator-code skip, evidence 그대로 출력 후 §5.3로
 
-2. **e2e 결과 분기**:
-   - PASS → 다음 단계(코드 리뷰)
-   - FAIL → evaluator-code skip, 평가자 evidence 그대로 출력 후 §5.3로
-
-3. **evaluator-code 호출** (e2e PASS 시만):
+4. **evaluator-code 호출** (functional이 PASS이거나 stack 미정의로 skip된 경우):
    - feature scope diff 산출 (첫 step commit의 parent ~ HEAD)
    - 평가자(`subagent_type="dev-workflow:evaluator-code"`)에 diff + progress.json + plan.goal 전달
-   - 검증 초점: cross-step 일관성, 누적 드리프트, scope 적합성. 파일 단위 스타일은 self-review가 이미 봤으므로 재검증 안 함
+   - 검증 초점: cross-step 일관성, 누적 드리프트, scope 적합성. 파일 단위 스타일은 self-review가 이미 봤으므로 재검증 안 함. **stack 무관**
 
-4. **평가 결과 보고** — e2e + code review의 PASS/FAIL/evidence 요약
+5. **평가 결과 보고** — functional + code review의 PASS/FAIL/evidence 요약
 
 #### 5.3 후속 결정
 

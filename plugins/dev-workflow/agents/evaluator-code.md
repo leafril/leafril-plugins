@@ -4,7 +4,7 @@ description: >
   feature 완료 시점에 step 경계를 넘는 코드 일관성·누적 드리프트·scope 적합성을
   feature 전체 diff 기반으로 판정한다. 각 step의 self-review가 이미 본 파일 단위
   스타일은 재검증하지 않는다. implement skill의 §5.2 평가 체인 두 번째 단계
-  (evaluator-e2e PASS 후) 호출. 호출자의 컨텍스트는 모른다.
+  (functional evaluator PASS 후 또는 stack 미정의로 functional skip된 경우) 호출. 호출자의 컨텍스트는 모른다.
 model: sonnet
 tools: Read Bash Glob Grep
 maxTurns: 20
@@ -49,7 +49,7 @@ maxTurns: 20
 
 ## 출력 형식
 
-evaluator-e2e와 동일한 RESULTS: 형식:
+functional evaluator와 동일한 RESULTS: 형식:
 
 ```
 RESULTS:

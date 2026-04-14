@@ -29,6 +29,7 @@ memory-audit이 CLAUDE.md에서 검증하는 항목. 다른 스킬들이 이 섹
 | `log_path` | SHOULD | stdout/stderr 리다이렉트 경로. 진단에 활용 | `/tmp/fooding-ai.log` |
 | `env_required` | MAY | 필수 환경변수 목록. 사용자 트러블슈팅 안내용 | `FOODING_LYRIA_PROJECT`, `MYSQL_DATASOURCE_URL` |
 | `adc` / `creds` | MAY | 외부 서비스 인증 준비 안내 | `gcloud auth application-default login 1회 필요` |
+| `stack` | SHOULD | functional evaluator dispatch 신호. `backend` (HTTP·DB) 또는 `frontend` (Playwright DOM). 미지정 시 functional evaluator skip되고 code review만 진행 | `backend` |
 
 **block 예시**:
 
@@ -42,6 +43,7 @@ memory-audit이 CLAUDE.md에서 검증하는 항목. 다른 스킬들이 이 섹
 - stop: `lsof -ti :8080 | xargs -r kill -TERM`
 - base_url: `http://localhost:8080`
 - log_path: `/tmp/fooding-ai.log`
+- stack: backend
 ```
 
 ---
