@@ -61,6 +61,15 @@ criteria 예:
 
 LLM/외부 API를 트리거하는 엔드포인트는 호출당 비용이 발생할 수 있다. criterion이 동일 결과를 여러 번 검증해야 한다면 **첫 호출 결과를 변수로 저장하고 재사용**한다. 같은 endpoint를 N번 호출하지 않는다.
 
+### 비-멱등 endpoint 호출 정책
+
+POST/PUT/DELETE 등 부작용을 만드는 endpoint를 criterion이 호출하면:
+
+- **단일 평가 실행 안**: 호출 1회 → before/after 상태를 SELECT로 관찰해 차이를 evidence에 기술. 같은 endpoint 반복 호출 금지.
+- **호출 후 cleanup**: **평가자 책임 아님**. "DB write 안 함" 원칙 유지.
+- **세션 간 누적**: 다음 평가 실행 시 같은 endpoint가 또 호출되어 row 누적·unique 충돌 가능. 이는 평가자도 generator도 못 막는 한계 → 사용자/CI가 평가 사이에 데이터 reset 책임. evidence에 "재호출 시 누적 위험 — pre-test cleanup 필요" 한 줄 안내 권장.
+- **권장**: 가능하면 feature를 멱등 동작(upsert, idempotent POST 등)으로 설계해 누적 자체를 없앰.
+
 ### DB 상태 검증
 
 - 명시적으로 `psql -h HOST -p PORT -U USER -d DB -c "SELECT ..."` 형태로 readonly 쿼리만.
