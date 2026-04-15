@@ -18,7 +18,7 @@ Developer productivity tools for git workflow, project management, and skill eva
 | sql | `/sql` | SQL 조회 실행 — 캐시 기반 테이블 매칭, 모호성 자동 해소, SELECT 쿼리 생성·실행 |
 | worktree | `/worktree` | Git worktree 생성/삭제 (bare-repo 하위 디렉토리) |
 
-### dev-workflow (v1.9.2)
+### dev-workflow (v1.10.0)
 
 Plan-implement-evaluate feature development workflow with automated quality gates, driven by per-feature JSON files in progress/ directory.
 
@@ -33,7 +33,7 @@ Plan-implement-evaluate feature development workflow with automated quality gate
 |---|---|
 | evaluator-functional-backend | 살아있는 backend dev server에 HTTP·DB·log 기반으로 feature acceptance criteria 1:1 검증 (평가 체인 1단계, stack=backend) |
 | evaluator-functional-frontend | 살아있는 frontend dev server에 Playwright DOM 기반으로 feature acceptance criteria 1:1 검증 (평가 체인 1단계, stack=frontend) |
-| evaluator-code | feature 전체 diff에서 cross-step 일관성·누적 드리프트·scope 적합성 판정 (평가 체인 2단계, functional PASS 후 또는 stack 미정의로 functional skip 시) |
+| evaluator-code | feature 전체 diff에서 아키텍처 준수·리팩터링 여지·성능 anti-pattern·테스트 규칙 준수 4초점 판정, JSON 출력 (평가 체인 2단계, functional PASS 후 또는 stack 미정의로 functional skip 시) |
 
 ### note-plugins (v1.3.5)
 

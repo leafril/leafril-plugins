@@ -151,7 +151,7 @@ implement 단계가 관리하는 필드. plan은 건드리지 않는다.
    #### 자가 리뷰 — 테스트 코드 (이 step에서 추가·변경된 test 파일 대상)
 
    플러그인 **표준 테스트 규칙**을 기준으로 판정한다. 재발명 금지.
-   - `references/test-rules-common.md` §7 자가 평가 체크리스트 5단계 (이름 / assert / mock / 중복 / 데이터 충분성) — **끝까지 훑을 것**
+   - `references/test-rules-common.md` §7 자가 평가 — §7-1~§7-5 (이름/assert/mock/중복/데이터) 기계적 점검으로 근거 수집 → §7-6 타입 분류 → §7-7 4기둥 판정 (Resistance·Maintainability 양보 불가) → §7-8 희생 설명. **8개 소절 끝까지 훑을 것**. 판정 결과는 pillar 단위로 기록
    - 언어별 보완: Kotlin/Spring이면 `references/test-rules-kotlin.md`, TypeScript면 `references/test-rules-typescript.md`의 해당 § 참조
    - 프로젝트 자체 `.claude/rules/test-*.md`가 있으면 그 MUST 조항(예: 특정 어노테이션·Base 클래스 의무)도 함께 점검 및 인용
 
