@@ -53,7 +53,7 @@ allowed-tools:
 - `status`: `"TODO"` 또는 `"DONE"` 두 가지
 - `notes` 세 필드 고정. 각 값은 문자열 배열, 비어 있으면 `[]`
 - 파일명(`{feature-id}.json`)이 단일 source of truth — JSON 내부에 id 중복 저장하지 않음
-- `implementation` 필드는 plan에서 만들지 않는다. implement 단계가 생성·관리
+- `features[].steps`는 plan에서 만들지 않는다. implement 단계가 각 feature 안에 생성·관리
 
 ### goal 작성 규칙
 
@@ -168,7 +168,7 @@ allowed-tools:
 - 코드 작성
 - 클래스/메서드/파일 구조 설계
 - 테스트 전략·도구 선택
-- `implementation` 필드 생성 (implement skill이 담당)
+- `features[].steps` 생성 (implement skill이 담당)
 - evaluator agent 호출 (사용자가 직접 검토)
 
 ## Anti-patterns

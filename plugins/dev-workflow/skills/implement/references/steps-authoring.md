@@ -1,4 +1,4 @@
-# `implementation.steps` 작성·갱신·추가 가이드
+# `features[].steps` 작성·갱신·추가 가이드
 
 SKILL.md에서 언제 참조하나:
 - **§2(a) steps 초안 작성 시** — "좋은/나쁜 예시" + "갱신 원칙"
@@ -69,7 +69,7 @@ SKILL.md에서 언제 참조하나:
 모든 feature의 step이 `done`, §5 보고까지 끝난 상태에서 추가 작업이 드러난 경우.
 
 판단 기준:
-- **같은 feature 범위 내 + 플랜 의도의 미완성**(예: feature의 `what`이 커버하는 동작인데 누락·버그) → feature `status`를 `TODO`로 되돌리고, `implementation.steps`에 새 step 추가 후 §3부터 재진행. 사용자 합의 필수
+- **같은 feature 범위 내 + 플랜 의도의 미완성**(예: feature의 `what`이 커버하는 동작인데 누락·버그) → feature `status`를 `TODO`로 되돌리고, 해당 feature의 `steps`에 새 step 추가 후 §3부터 재진행. 사용자 합의 필수
 - **같은 feature 범위 밖 리팩토링/주변 정리** → 현재 plan에 **새 feature** 추가가 맞으면 `/plan`으로 돌아가 `features`에 append. 범위가 크면 **별도 plan** 생성
 - **다른 feature 구현 중 발견된 회귀·버그** → 회귀를 유발한 feature로 돌아가 (A)/(B) 처리
 

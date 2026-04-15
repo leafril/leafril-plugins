@@ -26,32 +26,77 @@ allowed-tools:
 - **선행 feature가 필요하다고 판단되면 중단하고 사용자에게 `/plan`으로 선행 feature 작성을 제안**한다. 임의로 선행 작업을 시작하거나 /plan을 자동 호출하지 않는다
 - **§3.5 자가 리뷰는 generator(이 skill) 책임**. evaluator 서브에이전트에 위임 안 함. **feature 완료 시점**(§5)에는 functional evaluator(stack에 따라 backend/frontend) + evaluator-code 체인을 자동 호출 (사용자 선택 없음)
 
-## `implementation.steps` — 세션 간 working state
+## `features[].steps` — 세션 간 working state
 
-implement 단계가 관리하는 필드. plan은 건드리지 않는다.
+implement 단계가 관리하는 필드. plan이 만든 `features[]`의 각 feature 안에 `steps`를 덧붙인다. plan은 `what`/`status`/`notes`만 소유, implement는 `steps`만 소유.
 
 **왜 필요한가**: Claude Code 세션은 메모리를 공유하지 않는다. feature 하나 구현이 여러 세션에 걸칠 때, 다음 세션이 "어디까지 했고 뭘 할 차례인가"를 복구할 유일한 수단. TaskList는 session-scoped라 이 역할을 못 함.
+
+**왜 feature 안에 중첩하는가**: step이 어느 feature에 속하는지 구조 자체로 표현된다. 별도 id/featureId 필드 없이 "이 feature가 어디까지 왔나"가 한눈에 보인다.
 
 **무엇을 담는가**: 코드/commit/rules/plan 어디로도 복구 불가능한 **진행 상태**만. 파일 경로·API 엔드포인트·클래스명은 코드 스캔으로 복구되므로 담지 않는다.
 
 ```json
-"implementation": {
-  "steps": [
-    { "what": "짧은 작업 단위", "status": "todo" }
-  ]
-}
+"features": [
+  {
+    "what": "사용자가 관측하는 동작 한 줄",
+    "status": "TODO",
+    "steps": [
+      { "what": "짧은 작업 단위", "status": "todo" }
+    ]
+  }
+]
 ```
 
-- `status`: `todo | in_progress | done | blocked`
+- step `status`: `todo | in_progress | done | blocked`
 - `blocked`인 step은 `"blocker": "사유"` 추가
 - `done`인 step은 `"commit": "해시"` 추가 가능 (선택)
 - **순서는 배열 위치**. 인덱스 필드 없음
+- 아직 착수 안 한 feature는 `steps` 필드 자체가 없어도 됨 (첫 구현 시 생성)
 
 ### 한 번만 결정되는 것과 진화하는 것
 
-- 첫 구현 시작 시 plan.features를 보고 구체 build unit으로 쪼개서 `steps` 생성
+- 각 feature 구현 시작 시 해당 feature의 `what`을 보고 구체 build unit으로 쪼개서 그 feature의 `steps` 생성
 - 구현 도중 step **추가는 자유**. 재정렬·삭제는 **커밋 전 step 한정** (커밋된 step 불변성은 §4.5 참조). plan과 달리 stable contract 아님
 - 사용자에게 steps 초안을 보여주고 합의 받은 뒤 코딩 시작 (사전 점검 게이트)
+
+## `predeploy` — 배포 전 사람이 해야 할 일
+
+구현을 끝내고 배포하기 직전 사용자가 수동으로 해야 하는 액션을 기록하는 리마인더 필드. implement가 소유한다. plan은 안 건드림.
+
+**왜 필요한가**: "환경 변수 추가", "마이그레이션 수동 실행" 같은 배포 시 운영 액션은 코드에 안 남고 commit 메시지에서도 잘 묻힌다. 구현자(=implement skill)가 알고 있을 때 기록해두지 않으면 배포 시점에 유실됨.
+
+**스키마**: `progress/{feature-id}.json` 최상위 **마지막 키**로 `predeploy` 문자열 배열. `goal`/`features`/`notes` 뒤에 위치시켜 읽는 순서가 "무엇을→어떻게 진행됐는지→배포 시 할 일" 흐름이 되게 한다.
+
+```json
+{
+  "goal": "...",
+  "features": [ ... ],
+  "notes": { ... },
+  "predeploy": ["환경 변수 X_TOKEN 추가", "word_song_scene 마이그레이션 수동 실행"]
+}
+```
+
+- status 필드 없음. 사람이 실행 여부를 따로 트래킹하지 않는다 — 이 필드는 단순 리마인더
+- 빈 배열이면 필드 생략 가능
+
+**언제 기록하나 (implement 자체 판단, 사용자에게 안 물음)**:
+
+§3.5 자가 리뷰 블록 중 "배포 전 액션" 점검에서 이번 step의 diff가 아래 패턴에 해당하면 `predeploy`에 append:
+
+- 새 환경 변수/비밀키 참조 (`process.env.*`, `@Value`, `.env.example` 추가 등)
+- DB 스키마 변경 (migration 파일, DDL 스크립트)
+- Feature flag / config 신규 키
+- Cron/스케줄러 등록·변경
+- 외부 서비스 설정 변경 (bucket, queue, role, webhook)
+- 새 빌드 파이프라인·배포 스크립트 의존성
+
+판단 모호하면 그때만 AskUserQuestion. 명백한 패턴(위 목록)은 조용히 append.
+
+**언제 출력하나 (MUST)**:
+
+- feature 완료 보고(§5)의 끝에 "이번 feature 배포 전 액션" 섹션 — 이번 feature에서 **새로** append된 항목만 (없으면 "없음" 한 줄)
+- 모든 feature DONE 후 §7 종료 시 "전체 배포 전 액션" 섹션 — `predeploy` 배열 전체 그대로 출력
 
 ## 입력 파싱
 
@@ -101,16 +146,16 @@ implement 단계가 관리하는 필드. plan은 건드리지 않는다.
 
 ### 2. steps 준비
 
-**(a) steps가 없거나 비어 있으면 — 초기 생성**
+**(a) 현재 feature의 `steps`가 없거나 비어 있으면 — 초기 생성**
 
 1. 관련 코드를 스캔(Glob/Grep/Read)해 기존 모듈·패턴·의존성 파악
 2. 현재 처리할 feature를 만족시키는 **구체 build unit**으로 steps 초안을 만든다
    - 한 step = 1~수 커밋 분량의 작업 단위
    - 파일 경로는 최소한으로만 (step의 "what"에 암시적으로). 전체 manifest 작성 금지
 3. 초안을 사용자에게 보여주고 합의 받음. 수정 지시 반영 후 재확인
-4. 합의되면 `implementation.steps`에 write. 모든 step `status: "todo"`
+4. 합의되면 해당 feature의 `steps`에 write. 모든 step `status: "todo"`
 
-**(b) steps가 이미 있으면 — 세션 재개**
+**(b) 현재 feature의 `steps`가 이미 있으면 — 세션 재개**
 
 1. 상태 요약: done N개 / todo N개 / blocked N개, 다음 todo step 보고
 2. 사용자 확인 없이 다음 `todo` step부터 바로 시작 가능 (단, 사용자가 질문하면 답)
@@ -158,7 +203,13 @@ implement 단계가 관리하는 필드. plan은 건드리지 않는다.
    각 위반 finding은 **rules 경로:줄 + 테스트 파일 경로:줄** 2개 인용.
    마지막 줄: `판정: pass | fail` + 이유 한 줄.
 
-   **게이트**: 세 블록 중 하나라도 `fail`이면 §4 진입 금지. 코드 수정 → 테스트 재실행 → 해당 블록만 재출력. 전부 `pass`여야 §4로.
+   #### 자가 리뷰 — 배포 전 액션 점검
+   이번 step diff를 훑고 **`predeploy` 휴리스틱 패턴**(환경 변수/마이그레이션/flag/cron/외부 설정/새 빌드 의존성 — 상세는 skill §`predeploy` 참조) 해당 여부 판정.
+   - 해당 있음 → 한 줄씩 나열 + `progress/{feature-id}.json`의 `predeploy`에 append (사용자 질문 없이 조용히)
+   - 해당 없음 → "해당 없음" 한 줄
+   마지막 줄: `판정: 추가 N건 | 없음`. 이 블록은 pass/fail 개념 없음 — 게이트가 아니라 기록 장치.
+
+   **게이트**: 위 세 pass/fail 블록(범위·프로덕션·테스트) 중 하나라도 `fail`이면 §4 진입 금지. 코드 수정 → 테스트 재실행 → 해당 블록만 재출력. 전부 `pass`여야 §4로. 배포 전 액션 블록은 게이트에서 제외.
 
 **테스트 작성 여부**: step의 `what`이 코드 동작을 기술하면(상태 전환, 출력값, 데이터 흐름) 테스트를 쓴다. 프로젝트에 테스트 컨벤션이 있으면 따르고, 없으면 프로젝트 관용을 따른다.
 
@@ -196,7 +247,7 @@ step 작업이 끝나면:
 **커밋된 step은 immutable.** 사후 발견된 하자·버그·리팩토링은 기존 step을 열지 말고 새 step으로 추가한다.
 
 - **커밋 전 (현재 step 작업 중)**: 셀프리뷰·피드백으로 나온 수정은 같은 step에 흡수해 함께 커밋. steps 배열 변경 없음.
-- **커밋 후 (step `done` + commit 해시)**: 해당 step의 `what`·`commit`·파일 범위는 건드리지 않는다. 추가 작업은 새 step을 `implementation.steps`에 삽입.
+- **커밋 후 (step `done` + commit 해시)**: 해당 step의 `what`·`commit`·파일 범위는 건드리지 않는다. 추가 작업은 새 step을 해당 feature의 `steps`에 삽입.
 - **새 step 삽입 순서**: 아직 `todo`·`in_progress`인 구간에서는 의존 관계에 맞게 자유롭게 재배치 가능. 이미 `done`인 step의 배열 위치는 그대로 둔다.
 - **예외**: plan 전제 자체가 틀린 경우는 중단하고 `/plan`으로 돌아간다 (신규 step으로 덧붙이지 않는다).
 
@@ -208,7 +259,8 @@ step 작업이 끝나면:
 2. 변경된 파일 — new / modified / deleted
 3. 주요 결정 — 1~3줄
 4. 검증 결과 — 테스트/빌드 실행 결과
-5. 남은 feature 수
+5. 이번 feature 배포 전 액션 — 이번 feature 진행 중 `predeploy`에 신규 append된 항목 나열 (없으면 "없음")
+6. 남은 feature 수
 
 보고 직후 평가 체인이 자동 실행된다 (사용자 선택 없음).
 
@@ -263,11 +315,11 @@ step 작업이 끝나면:
 feature가 "DONE" 확정되면 (사용자 OK):
 
 1. `progress/{feature-id}.json`의 해당 feature `status`를 `"TODO"` → `"DONE"`
-2. `implementation.steps`는 남겨둔다 — 감사·회고용
+2. 해당 feature의 `steps`는 남겨둔다 — 감사·회고용
 3. 남은 `"TODO"` 있으면 다음 feature의 2(steps 준비)로
-4. 모두 `"DONE"`이면 완료 보고하고 종료
+4. 모두 `"DONE"`이면 완료 보고하고 종료. 완료 보고에 **"전체 배포 전 액션" 섹션 MUST**: `progress/{feature-id}.json`의 `predeploy` 배열 전체를 그대로 출력하고 "배포 직전 이 목록을 실행하세요" 안내 한 줄. 배열이 비었으면 "없음" 한 줄
 
-## `implementation.steps` 작성 가이드
+## `features[].steps` 작성 가이드
 
 좋은/나쁜 step 예시·status 갱신 원칙·재작성 판단 기준·추가 시나리오(A/B/C/D)는 [references/steps-authoring.md](references/steps-authoring.md) 참조. §2(a) steps 초안 작성 시, 그리고 §3·§4에서 배열 변경이 필요하다고 판단될 때 해당 참조를 연다.
 
@@ -278,5 +330,5 @@ feature가 "DONE" 확정되면 (사용자 OK):
 - Plan 범위 밖 리팩토링·코드 정리
 - 컨벤션 외 주관적 개선
 - feature 순서 임의 변경 (배열 순서 = 구현 순서)
-- `implementation.steps`에 파일 manifest·API 엔드포인트·클래스 시그니처 기록 (코드가 정답)
+- `features[].steps`에 파일 manifest·API 엔드포인트·클래스 시그니처 기록 (코드가 정답)
 - plan의 `goal`·`features`·`notes` 수정 (plan 전제가 틀리면 중단 후 `/plan`으로 돌아감)
