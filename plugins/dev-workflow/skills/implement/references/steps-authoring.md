@@ -17,9 +17,12 @@ SKILL.md에서 언제 참조하나:
 
 ## §1. 좋은 step 예시
 
-- "DDL + Entity + Repository"
-- "외부 API 클라이언트 + 응답 파서"
-- "통합 테스트 (외부 API mock)"
+- "DDL + Entity + Repository" (backend)
+- "외부 API 클라이언트 + 응답 파서" (backend)
+- "통합 테스트 (외부 API mock)" (backend/frontend 공용)
+- "페이지 컴포넌트 + 라우트 등록" (frontend)
+- "폼 상태 훅 + 유효성 검증" (frontend)
+- "컴포넌트 스토리 + 시각 회귀 테스트" (frontend)
 
 ## §2. 나쁜 step 예시
 

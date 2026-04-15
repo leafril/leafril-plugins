@@ -11,6 +11,8 @@ allowed-tools:
   - Grep
   - Bash
   - AskUserQuestion
+  - Agent
+  - ToolSearch
 ---
 
 # Implement — Feature-by-Feature Loop
@@ -90,6 +92,7 @@ implement 단계가 관리하는 필드. plan이 만든 `features[]`의 각 feat
 - Cron/스케줄러 등록·변경
 - 외부 서비스 설정 변경 (bucket, queue, role, webhook)
 - 새 빌드 파이프라인·배포 스크립트 의존성
+- 프론트엔드 빌드 env (`VITE_*`, `NEXT_PUBLIC_*`, `REACT_APP_*`), CDN/정적 asset 경로, CSP/헤더 변경
 
 판단 모호하면 그때만 AskUserQuestion. 명백한 패턴(위 목록)은 조용히 append.
 
@@ -196,8 +199,8 @@ implement 단계가 관리하는 필드. plan이 만든 `features[]`의 각 feat
    #### 자가 리뷰 — 테스트 코드 (이 step에서 추가·변경된 test 파일 대상)
 
    플러그인 **표준 테스트 규칙**을 기준으로 판정한다. 재발명 금지.
-   - `references/test-rules-common.md` §7 자가 평가 — §7-1~§7-5 (이름/assert/mock/중복/데이터) 기계적 점검으로 근거 수집 → §7-6 타입 분류 → §7-7 4기둥 판정 (Resistance·Maintainability 양보 불가) → §7-8 희생 설명. **8개 소절 끝까지 훑을 것**. 판정 결과는 pillar 단위로 기록
-   - 언어별 보완: Kotlin/Spring이면 `references/test-rules-kotlin.md`, TypeScript면 `references/test-rules-typescript.md`의 해당 § 참조
+   - 플러그인 공용 `../../references/test-rules-common.md` (dev-workflow 플러그인 루트의 `references/`) §7 자가 평가 — §7-1~§7-5 (이름/assert/mock/중복/데이터) 기계적 점검으로 근거 수집 → §7-6 타입 분류 → §7-7 4기둥 판정 (Resistance·Maintainability 양보 불가) → §7-8 희생 설명. **8개 소절 끝까지 훑을 것**. 판정 결과는 pillar 단위로 기록
+   - 언어별 보완: Kotlin/Spring이면 `../../references/test-rules-kotlin.md`, TypeScript면 `../../references/test-rules-typescript.md`의 해당 § 참조
    - 프로젝트 자체 `.claude/rules/test-*.md`가 있으면 그 MUST 조항(예: 특정 어노테이션·Base 클래스 의무)도 함께 점검 및 인용
 
    각 위반 finding은 **rules 경로:줄 + 테스트 파일 경로:줄** 2개 인용.
