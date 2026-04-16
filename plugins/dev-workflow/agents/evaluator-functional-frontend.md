@@ -69,18 +69,28 @@ criterion을 아래 관점에서 해석하고 판정한다:
 
 ## 출력 형식
 
-반드시 아래 형식으로 출력한다. coordinator가 파싱한다:
+반드시 **PLAN → RESULTS** 순으로 출력한다. coordinator가 파싱한다.
 
 ```
+PLAN:
+- criterion "video에 초기 opacity-0" → navigate 후 evaluate로 video.className 검사
+- criterion "canplay 후 스피너 사라짐" → 동일 페이지 재사용, wait_for canplay 후 spinner 존재·video className 검사
+
 RESULTS:
-- criterion: "비디오 요소에 초기 opacity-0 클래스가 적용되어 있다" | result: PASS | evidence: "evaluate로 video.className 확인: 'opacity-0' 포함"
-- criterion: "canplay 이벤트 후 스피너가 사라진다" | result: PASS | evidence: "video.readyState=4 상태에서 svg.animate-spin 요소 미존재, video.className에 'opacity-100' 포함"
+- criterion: "video에 초기 opacity-0" | result: PASS
+  command: browser_evaluate: () => document.querySelector('video').className
+  observed: "opacity-0 transition-opacity"
+- criterion: "canplay 후 스피너 사라짐" | result: PASS
+  command: browser_wait_for({text:""}); browser_evaluate: () => ({spinner: !!document.querySelector('svg.animate-spin'), cls: document.querySelector('video').className})
+  observed: before={spinner:true, cls:"opacity-0..."} → after={spinner:false, cls:"opacity-100..."}
 ```
 
-evidence 작성 규칙:
-- **관찰한 사실**을 기술한다. "정상 동작함" 같은 주관적 표현 금지
-- DOM 기반 근거: 요소 선택자, 개수, 텍스트 내용, 속성값, 클래스 목록
-- 상태 전이 근거: 이전 상태 → 트리거 → 이후 상태를 순서대로 기술
+작성 규칙:
+- **관찰한 사실만**. "정상 동작함" 같은 주관 표현 금지.
+- `PLAN`: criterion별 "어떤 tool로 무엇을 검사할지" one-liner. 같은 페이지·snapshot을 재사용하면 명시해 중복 호출 방지.
+- `command`: 실제 호출한 tool + JS 스니펫 1줄. snapshot 원본은 붙이지 말 것 (너무 큼) — 필요한 값은 evaluate로 추출.
+- `observed`: raw 반환값. 상태 전이는 `before → after` 형태.
+- FAIL은 기대 vs 실제 차이를 observed에 명시.
 
 ## 원칙
 

@@ -288,6 +288,7 @@ step 작업이 끝나면:
    - `Agent` tool로 dispatch. 평가자에 **실행 방법 block 전체**(`start`/`health`/`stop`/`base_url`/`log_path` 등) + acceptance criteria + (선택) DB 접근 정보 전달
    - **환경 부트스트랩(spawn/health/stop) 책임은 평가자**. implement는 명령 정보만 전달, 직접 spawn 안 함
    - 평가자가 자체 health check → 필요 시 spawn → 평가 → finally stop 수행
+   - **프롬프트 금칙어 MUST**: "환경 부팅 불가 시 SKIP 허용", "curl-less OK", "env 없으면 skip" 류의 pre-escape hatch 문구를 평가자에게 전달 금지. SKIP 조건 판단은 평가자 내부 기준(실제 spawn 시도 후 timeout)만을 따르도록 둔다. 호출자가 미리 탈출구를 열어주면 평가자가 실제 시도 없이 무시하는 사고가 반복된다
    - 결과: PASS → 4번. FAIL → evaluator-code skip, evidence 그대로 출력 후 §5.3로
    - SKIP(평가자가 boot timeout 등으로 환경 확보 실패) → evaluator-code skip, evidence 보고 후 §5.3로
 

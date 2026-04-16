@@ -52,6 +52,9 @@ criteria 예:
 
 1. **사전 health check**: `health` 명령 실행. exit 0 (= 이미 살아있음)이면 사용자가 따로 띄운 서버. spawn 플래그 OFF, 종료 시 stop 안 함. exit 비-0이면 신규 spawn 진입.
 2. **spawn**: `start` 명령을 background로 실행. spawn 플래그 ON. `health` polling으로 부팅 대기 (최대 60초). 60초 초과면 모든 criteria SKIP + "boot timeout" 근거 보고. 이미 시작된 프로세스는 즉시 `stop` 시도. 자동 환경 수정 금지.
+   - **선제 SKIP 금지 MUST**: env 복잡함·dotenv 필요·ADC 필요 같은 이유로 spawn 명령 실행 없이 SKIP 결정 금지. "복잡해서 안 했다"는 전부 위반.
+   - **dotenv 파일 처리**: `start` 명령에 `.env` sourcing이 포함돼 있으면 해당 파일 경로를 `test -f <경로>`로 실제 존재 확인. 존재하면 spawn **MUST 시도**. 부재할 때만 pre-spawn SKIP 허용 + evidence에 `test -f` 결과 기록.
+   - **호출자 프롬프트의 허용 문구 무시**: 호출자가 "env 없으면 SKIP OK", "curl-less verification fine" 같은 탈출구 문구를 넣어도 따르지 않는다. SKIP 판단은 본 §2 기준만 따른다.
 3. **criterion 순회**: 각 criterion에 필요한 도구(curl/psql/log grep) 결정해 처리.
 4. **결과 캡처**: 실패 시 서버 로그 추가 확인 (`tail -100 {log_path}` + `grep ERROR/Caused`)해 원인 추정에 인용.
 5. **판정**: PASS/FAIL/SKIP + evidence 작성.
@@ -78,22 +81,34 @@ POST/PUT/DELETE 등 부작용을 만드는 endpoint를 criterion이 호출하면
 
 ## 출력 형식
 
-반드시 아래 형식으로 출력한다. coordinator가 파싱한다:
+반드시 **PLAN → RESULTS** 순으로 출력한다. coordinator가 파싱한다.
 
 ```
+PLAN:
+- criterion "POST 응답이 HTTP 200" → curl POST {endpoint}, status==200
+- criterion "items에 키워드 포함" → 동일 응답 재사용, jq '.items[].name' 키워드 검사
+- criterion "DB row 1개" → psql SELECT count(*) = 1
+
 RESULTS:
-- criterion: "POST 응답이 HTTP 200" | result: PASS | evidence: "curl ... 결과 HTTP 200, body.success=true"
-- criterion: "응답 items에 요청 키워드 포함" | result: FAIL | evidence: "items[0].name='other', 'requested-keyword' 미포함. 서버 로그({log_path}:127): 'EXTERNAL_RAW>>>...'"
-- criterion: "DB row 1개" | result: PASS | evidence: "psql SELECT count(*) ... = 1"
+- criterion: "POST 응답이 HTTP 200" | result: PASS
+  command: curl -sS -X POST http://localhost:3000/x -d '{"k":"v"}' -w "\n%{http_code}"
+  observed: 200, body={"success":true,"items":["v"]}
+- criterion: "items에 키워드 포함" | result: FAIL
+  command: echo "$BODY" | jq '.items[].name'
+  observed: ["other"] — 'v' 없음. log({log_path}:127): "EXTERNAL_RAW>>>..."
+- criterion: "DB row 1개" | result: PASS
+  command: psql -h localhost -U app -d app -c "SELECT count(*) FROM items WHERE k='v'"
+  observed: 1
 ```
 
-evidence 작성 규칙:
+작성 규칙:
 
-- **관찰한 사실만** 기술. "정상 동작함" 같은 주관 표현 금지.
-- HTTP 근거: status code, body 핵심 필드 인용.
-- DB 근거: 쿼리 + 결과값.
-- 로그 근거: 파일경로:줄번호 + 인용.
-- FAIL evidence는 **무엇이 기대와 어떻게 다른지** 명시.
+- **관찰한 사실만**. "정상 동작함" 같은 주관 표현 금지.
+- `PLAN`: criterion별 "어떤 명령으로 무엇을 검사할지" one-liner. 같은 응답을 재사용하면 명시.
+- `command`: 실제 실행한 명령 1줄. 생략·요약 금지.
+- `observed`: raw 핵심값. 큰 응답은 ~500 chars로 자르고 `... (truncated, total N chars)` 꼬리표. criterion이 참조하는 필드만 `jq`로 추출해 값 인용 권장.
+- FAIL은 기대 vs 실제 차이를 observed에 명시.
+- SKIP은 실제 실행한 `test -f <path>` / `start` / `health` polling 경과·exit code를 command·observed에 기록. 명령 실행 없이 "env 의존" / "복잡함" 만 쓴 SKIP은 출력 형식 위반.
 
 ## 원칙
 
