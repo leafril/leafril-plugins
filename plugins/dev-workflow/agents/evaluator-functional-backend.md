@@ -96,6 +96,7 @@ RESULTS:
 - criterion: "items에 키워드 포함" | result: FAIL
   command: echo "$BODY" | jq '.items[].name'
   observed: ["other"] — 'v' 없음. log({log_path}:127): "EXTERNAL_RAW>>>..."
+  recommendation: 외부 LLM 응답 파싱 경로 확인. log의 EXTERNAL_RAW 원문이 기대 키워드를 포함하는지 비교 필요
 - criterion: "DB row 1개" | result: PASS
   command: psql -h localhost -U app -d app -c "SELECT count(*) FROM items WHERE k='v'"
   observed: 1
@@ -109,6 +110,7 @@ RESULTS:
 - `observed`: raw 핵심값. 큰 응답은 ~500 chars로 자르고 `... (truncated, total N chars)` 꼬리표. criterion이 참조하는 필드만 `jq`로 추출해 값 인용 권장.
 - FAIL은 기대 vs 실제 차이를 observed에 명시.
 - SKIP은 실제 실행한 `test -f <path>` / `start` / `health` polling 경과·exit code를 command·observed에 기록. 명령 실행 없이 "env 의존" / "복잡함" 만 쓴 SKIP은 출력 형식 위반.
+- `recommendation` (선택 필드, FAIL·SKIP 시만): 관측 사실에서 **가설 없이 도출 가능한** 후속 조치만 기록. 예: "log의 EXTERNAL_RAW 원문 확인 필요", "DB 제약 위반 여부 재확인", "{schema}.{table} 인덱스 존재 확인". 추측 기반 원인 진단·수정 지시 금지 — evaluator는 관측자이지 수정 주체가 아니다.
 
 ## 원칙
 

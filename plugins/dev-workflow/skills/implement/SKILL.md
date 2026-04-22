@@ -62,6 +62,67 @@ implement 단계가 관리하는 필드. plan이 만든 `features[]`의 각 feat
 - 구현 도중 step **추가는 자유**. 재정렬·삭제는 **커밋 전 step 한정** (커밋된 step 불변성은 §4.5 참조). plan과 달리 stable contract 아님
 - 사용자에게 steps 초안을 보여주고 합의 받은 뒤 코딩 시작 (사전 점검 게이트)
 
+## `features[].criteria` — evaluator 판정용 acceptance criteria
+
+implement가 소유하는 필드. feature의 `what`(사용자 관측 한 줄)을 evaluator가 이진(PASS/FAIL) 판정할 수 있는 **검증 가능한 criterion 배열**로 번역한 것. stack(backend/frontend)에 따라 관측 수단이 다를 뿐 개념은 동일.
+
+**왜 필요한가**: plan의 `what`은 도메인 한 줄이라 그대로 evaluator에 넘기면 모호하다. implement가 호출 시점에 즉흥 생성하면 사용자가 합의하지 않은 criterion으로 PASS/FAIL이 결정된다. Sprint Contract의 핵심 단계 — 누락되면 평가 전체가 흔들린다.
+
+**스키마**: feature 안에 객체 배열로 중첩. 기존 evaluator 입력 포맷과 동일(`agents/evaluator-functional-backend.md`·`agents/evaluator-functional-frontend.md` 입력 섹션 참조).
+
+```json
+"features": [
+  {
+    "what": "사용자가 관측하는 동작 한 줄",
+    "status": "TODO",
+    "criteria": [
+      { "criterion": "검증 가능한 한 줄 (stack에 맞는 관측 수단으로)" }
+    ],
+    "steps": [ ]
+  }
+]
+```
+
+**언제 생성하는가**: §2(a) steps 초안 생성과 **동시에**. 사용자에게 steps·criteria를 한 묶음으로 제시하고 합의받는다. 이 합의가 Sprint Contract의 실체.
+
+**작성 규칙·stack별 예시·자동 검증 불가 케이스·수정·공통 금지**: [references/criteria-authoring.md](references/criteria-authoring.md) 참조.
+
+## `manual_verification` — 사람이 눈으로 확인해야 할 항목
+
+배포 전 운영 액션이 아니라, **사람이 직접 관찰·판단해야 통과 여부가 결정되는 항목**을 기록하는 리마인더 필드. implement가 소유한다. plan은 안 건드림.
+
+**왜 필요한가**: 시각 연출·애니메이션 품질·canvas 게임 내부 렌더·음향 체감 등은 evaluator가 자동 관측할 수단이 없다(`agents/evaluator-functional-frontend.md`의 "Canvas / DOM 밖 렌더링 대상 처리" 참조). 그렇다고 검증 자체가 불필요한 게 아니라, **사람 눈으로 10~30초 스모크**가 필요한 것. 이 리스트를 progress 밖에 두면 배포 시점에 잊힌다. `predeploy`와 자매 필드 — `predeploy`가 **운영 액션**(env·migration·cron)을, `manual_verification`이 **관찰 액션**(시각·UX·체감 판정)을 맡는다.
+
+**스키마**: `progress/{feature-id}.json` 최상위 키로 `manual_verification` 문자열 배열. `predeploy` 바로 앞에 위치 — 읽는 순서가 "무엇을 → 어떻게 진행됐는지 → 사람이 볼 것 → 배포 시 할 일" 흐름이 되게 한다.
+
+```json
+{
+  "goal": "...",
+  "features": [ ],
+  "notes": { },
+  "manual_verification": [
+    "콤보 20 도달 시 화면 중앙 텍스트가 HUD 자리로 이동·페이드되는지 확인",
+    "로그인 에러 메시지 등장 시 레이아웃이 흔들리지 않는지 확인"
+  ],
+  "predeploy": ["환경 변수 X_TOKEN 추가"]
+}
+```
+
+- status 필드 없음. 사람이 실행 여부를 따로 트래킹하지 않는다 — 단순 리마인더
+- 빈 배열이면 필드 생략 가능
+
+**언제 기록하나 (두 경로)**:
+
+1. **criteria 초안 작성 시점 (§2(a))**: feature.what에 시각 연출·체감 판정 요소가 포함되면 해당 항목을 criteria가 아닌 `manual_verification` 초안에 담아 사용자와 합의. 상세 이관 기준은 `references/criteria-authoring.md` §5 참조.
+2. **evaluator SKIP 시점 (§5.2)**: functional evaluator가 SKIP을 내면서 `recommendation`에 "manual_verification 이관 권장"을 명시하면, coordinator(implement)가 해당 criterion을 `manual_verification`에 한 줄 요약으로 append. 사용자 질문 없이 조용히 수행.
+
+판단 모호하면 AskUserQuestion. evaluator recommendation이 명시적 이관 권고면 조용히 append.
+
+**언제 출력하나 (MUST)**:
+
+- feature 완료 보고(§5)의 "이번 feature 수동 확인 항목" 섹션 — 이번 feature 진행 중 **새로** append된 항목만 (없으면 "없음" 한 줄)
+- 모든 feature DONE 후 §7 종료 시 "전체 수동 확인 항목" 섹션 — `manual_verification` 배열 전체 그대로 출력 + "배포 전 이 목록을 눈으로 확인하세요" 안내 한 줄. 배열이 비었으면 "없음"
+
 ## `predeploy` — 배포 전 사람이 해야 할 일
 
 구현을 끝내고 배포하기 직전 사용자가 수동으로 해야 하는 액션을 기록하는 리마인더 필드. implement가 소유한다. plan은 안 건드림.
@@ -155,8 +216,9 @@ implement 단계가 관리하는 필드. plan이 만든 `features[]`의 각 feat
 2. 현재 처리할 feature를 만족시키는 **구체 build unit**으로 steps 초안을 만든다
    - 한 step = 1~수 커밋 분량의 작업 단위
    - 파일 경로는 최소한으로만 (step의 "what"에 암시적으로). 전체 manifest 작성 금지
-3. 초안을 사용자에게 보여주고 합의 받음. 수정 지시 반영 후 재확인
-4. 합의되면 해당 feature의 `steps`에 write. 모든 step `status: "todo"`
+3. **feature.what을 evaluator가 이진 판정 가능한 criterion 배열로 번역해 `criteria` 초안 생성**. stack(CLAUDE.md 실행 방법 block의 `stack:` 값)에 맞는 관측 수단으로 작성. 작성 규칙·예시·자동 검증 불가 케이스 처리는 [references/criteria-authoring.md](references/criteria-authoring.md) 참조
+4. steps 초안 + criteria 초안을 **한 묶음**으로 사용자에게 제시하고 합의 받음. 수정 지시 반영 후 재확인 (이 합의가 Sprint Contract의 실체)
+5. 합의되면 해당 feature의 `steps`에 write(모든 step `status: "todo"`), `criteria`에도 write. 이 시점 이후 feature 구현은 criteria를 contract로 진행 — 임의 수정·삭제 금지
 
 **(b) 현재 feature의 `steps`가 이미 있으면 — 세션 재개**
 
@@ -262,8 +324,9 @@ step 작업이 끝나면:
 2. 변경된 파일 — new / modified / deleted
 3. 주요 결정 — 1~3줄
 4. 검증 결과 — 테스트/빌드 실행 결과
-5. 이번 feature 배포 전 액션 — 이번 feature 진행 중 `predeploy`에 신규 append된 항목 나열 (없으면 "없음")
-6. 남은 feature 수
+5. 이번 feature 수동 확인 항목 — 이번 feature 진행 중 `manual_verification`에 신규 append된 항목 나열 (없으면 "없음")
+6. 이번 feature 배포 전 액션 — 이번 feature 진행 중 `predeploy`에 신규 append된 항목 나열 (없으면 "없음")
+7. 남은 feature 수
 
 보고 직후 평가 체인이 자동 실행된다 (사용자 선택 없음).
 
@@ -285,7 +348,8 @@ step 작업이 끝나면:
    - `stack:` 미정의 또는 위 둘 외 값 → functional evaluator skip하고 사용자에게 한 줄 안내, **3번 evaluator-code로 직행**
 
 3. **functional evaluator 호출** (stack 매칭 시만):
-   - `Agent` tool로 dispatch. 평가자에 **실행 방법 block 전체**(`start`/`health`/`stop`/`base_url`/`log_path` 등) + acceptance criteria + (선택) DB 접근 정보 전달
+   - `Agent` tool로 dispatch. 평가자에 **실행 방법 block 전체**(`start`/`health`/`stop`/`base_url`/`log_path` 등) + **현재 feature의 `criteria` 필드 그대로** + (선택) DB 접근 정보 전달
+   - `criteria`는 §2(a)에서 사용자와 이미 합의된 배열. **호출 시점에 새로 만들지 말 것**. 누락·불일치 시 Sprint Contract 위반
    - **환경 부트스트랩(spawn/health/stop) 책임은 평가자**. implement는 명령 정보만 전달, 직접 spawn 안 함
    - 평가자가 자체 health check → 필요 시 spawn → 평가 → finally stop 수행
    - **프롬프트 금칙어 MUST**: "환경 부팅 불가 시 SKIP 허용", "curl-less OK", "env 없으면 skip" 류의 pre-escape hatch 문구를 평가자에게 전달 금지. SKIP 조건 판단은 평가자 내부 기준(실제 spawn 시도 후 timeout)만을 따르도록 둔다. 호출자가 미리 탈출구를 열어주면 평가자가 실제 시도 없이 무시하는 사고가 반복된다
@@ -321,7 +385,9 @@ feature가 "DONE" 확정되면 (사용자 OK):
 1. `progress/{feature-id}.json`의 해당 feature `status`를 `"TODO"` → `"DONE"`
 2. 해당 feature의 `steps`는 남겨둔다 — 감사·회고용
 3. 남은 `"TODO"` 있으면 다음 feature의 2(steps 준비)로
-4. 모두 `"DONE"`이면 완료 보고하고 종료. 완료 보고에 **"전체 배포 전 액션" 섹션 MUST**: `progress/{feature-id}.json`의 `predeploy` 배열 전체를 그대로 출력하고 "배포 직전 이 목록을 실행하세요" 안내 한 줄. 배열이 비었으면 "없음" 한 줄
+4. 모두 `"DONE"`이면 완료 보고하고 종료. 완료 보고에 두 섹션 MUST:
+   - **"전체 수동 확인 항목" 섹션**: `progress/{feature-id}.json`의 `manual_verification` 배열 전체 그대로 출력 + "배포 전 이 목록을 눈으로 확인하세요" 안내 한 줄. 배열이 비었으면 "없음" 한 줄
+   - **"전체 배포 전 액션" 섹션**: `predeploy` 배열 전체 그대로 출력 + "배포 직전 이 목록을 실행하세요" 안내 한 줄. 배열이 비었으면 "없음" 한 줄
 
 ## `features[].steps` 작성 가이드
 
