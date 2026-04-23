@@ -30,6 +30,7 @@ allowed-tools:
 | 상수값(재시도 횟수·key 패턴) | 코드 상수 | ❌ 중복 |
 | "왜 이 방식으로 짰나" | commit 메시지·PR 설명 | ❌ (드물게 예외 — 아래) |
 | 기능 목표·인수 동작 | — | ✅ `goal`, `features` |
+| 수용 조건 (Acceptance Criteria) | — | ✅ `features[].criteria` |
 | 범위 선언 (무엇이 이 기능이 아닌지) | — | ✅ `notes.scope` |
 | **WHAT-level pivot + 기각된 대안** | — | ✅ `notes.decisions` |
 | **재발견 비용이 큰 학습** | — | ✅ `notes.caveats` |
@@ -40,7 +41,13 @@ allowed-tools:
 {
   "goal": "도메인 언어 한 줄 — 무엇을 왜 만드는지",
   "features": [
-    { "what": "사용자가 관측하는 동작 한 줄", "status": "TODO" }
+    {
+      "what": "사용자가 관측하는 동작 한 줄",
+      "status": "TODO",
+      "criteria": [
+        { "criterion": "이진 판정 가능한 수용 조건" }
+      ]
+    }
   ],
   "notes": {
     "scope": ["명시적 범위 안/밖 불릿"],
@@ -54,7 +61,7 @@ allowed-tools:
 - `notes` 세 필드 고정. 각 값은 문자열 배열, 비어 있으면 `[]`
 - 파일명(`{feature-id}.json`)이 단일 source of truth — JSON 내부에 id 중복 저장하지 않음
 - `features[].steps`는 plan에서 만들지 않는다. implement 단계가 각 feature 안에 생성·관리
-- `features[].criteria`도 plan에서 만들지 않는다. evaluator가 이진 판정할 acceptance criteria 목록으로, implement §2(a) steps 준비 시점에 feature.what을 번역해 생성·합의한다 (implement/SKILL.md 참조). plan은 `what` 한 줄만 책임진다
+- **`features[].criteria`는 plan이 소유한다**. `what` 확정과 함께 작성해 사용자 합의(Sprint Contract)의 일부로 굳힌다. implement·evaluator는 이 배열을 해석·실행만 하며 내용을 변경하지 않는다. 작성·예시·stack별 관측 수단·나쁜 패턴은 [references/criteria-authoring.md](references/criteria-authoring.md) 참조
 
 ### goal 작성 규칙
 
@@ -77,6 +84,18 @@ allowed-tools:
 - **리팩토링·성능 작업이면 기준선을 포함**한다
   - 리팩토링: "기존 동작 X가 변경 후에도 동일하게 작동" 류 회귀 항목 최소 1개
   - 성능: 측정 가능한 before → after 지표 최소 1개
+
+### features[].criteria 작성 규칙
+
+각 feature의 `what`이 "DONE"이라고 말할 조건 — Acceptance Criteria. evaluator가 이진(PASS/FAIL) 판정한다.
+
+- **작성 시점**: 각 feature의 `what` 확정과 **동시에**. 구현 시작 전에 박힌다
+- **본질 반영**: criterion이 "이 feature가 작동한다"의 **직접 증거**여야 한다. "회귀 가드", "타입체크 통과", "일반 페이지 렌더" 같은 feature 본질과 무관한 헬스체크는 criteria 자리에 넣지 말 것
+- **이진 판정 가능**: evaluator가 추가 가정 없이 PASS/FAIL을 정할 수 있어야 한다. 주관 표현("자연스럽다"·"적절하다") 금지
+- **관측 수단 있음**: stack이 제공하는 수단(HTTP·DB·log·DOM·network·client analytics)으로 볼 수 있어야 한다. frontend feature가 DOM만으론 안 잡히면 **network 수단을 1차로 고려**
+- **자동 검증 불가 항목** (시각 연출·음향·canvas 내부·체감): criteria에 넣지 말고 `notes.caveats`에 "구현 중 manual_verification 이관 후보" 메모
+
+작성·예시·stack별 관측 수단·나쁜 criterion 패턴·자동 검증 불가 이관: [references/criteria-authoring.md](references/criteria-authoring.md) 참조.
 
 ### notes 필터 — 항목을 넣기 전에 반드시 통과해야 할 질문
 
@@ -161,8 +180,9 @@ allowed-tools:
 3. **머지 가능성**: 각 feature가 단독으로 머지돼도 회귀 없이 의미가 있는가? ❌인 항목은 앞뒤 feature와 병합 또는 순서 재배치
 4. **리팩토링·성능이면 기준선 체크**: 리팩토링이면 회귀 불변식 항목 최소 1개, 성능이면 측정 가능한 before→after 지표 항목 최소 1개가 있는가? 없으면 추가
 5. **notes 필터 재통과**: 이미 작성한 각 `decisions` 항목이 "WHAT을 바꾸는가 + 기각 대안 재제안 위험이 있는가" 둘 다 Yes인가? 하나라도 No면 제거 (코드·commit이 정답)
+6. **features[].criteria 본질 반영 체크**: 각 feature의 criteria를 한 줄씩 나열하고, 각 criterion에 대해 "이 criterion이 PASS면 feature.what이 실제로 달성된 증거가 되는가?"를 판정한다. ❌(회귀 가드·타입체크·CI 헬스체크 류)는 재작성하거나 다른 feature로 이동. 작성 세부는 `references/criteria-authoring.md` 참조
 
-이 5개 중 하나라도 수정이 발생하면 JSON을 업데이트한 뒤 다시 1번부터 검증. 통과해야 §5로 간다.
+이 6개 중 하나라도 수정이 발생하면 JSON을 업데이트한 뒤 다시 1번부터 검증. 통과해야 §5로 간다.
 
 ### 5. 사용자 확인
 
@@ -191,3 +211,6 @@ allowed-tools:
 - caveats에 "implement에서 결정할 포인트" 기록 (implement가 결정 후 코드·commit에 남김)
 - scope에 범위 안인 걸 나열
 - goal에 라이브러리 이름 노출 ("Phaser 레이어 재작성" → "게임 로직 재작성")
+- **criteria를 feature와 무관한 회귀 가드로 채움** (예: 다른 feature의 기본 동작 확인, "타입체크·린트 통과" 류 CI 헬스체크)
+- **feature의 `what`은 "데이터가 전송된다"인데 criterion은 "UI에 성공 메시지가 뜬다"처럼 간접 관측으로 본질 우회** (network 수단으로 송출 요청을 직접 관측해야)
+- **자동 검증 불가 항목을 criteria에 억지로 넣음** (canvas 내부 상태·음향·시각 연출 품질 → criteria 아닌 notes.caveats로)

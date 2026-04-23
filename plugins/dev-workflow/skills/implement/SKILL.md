@@ -30,7 +30,7 @@ allowed-tools:
 
 ## `features[].steps` — 세션 간 working state
 
-implement 단계가 관리하는 필드. plan이 만든 `features[]`의 각 feature 안에 `steps`를 덧붙인다. plan은 `what`/`status`/`notes`만 소유, implement는 `steps`만 소유.
+implement 단계가 관리하는 필드. plan이 만든 `features[]`의 각 feature 안에 `steps`를 덧붙인다. plan은 `what`/`status`/`notes`/`criteria` 소유, implement는 `steps`만 소유.
 
 **왜 필요한가**: Claude Code 세션은 메모리를 공유하지 않는다. feature 하나 구현이 여러 세션에 걸칠 때, 다음 세션이 "어디까지 했고 뭘 할 차례인가"를 복구할 유일한 수단. TaskList는 session-scoped라 이 역할을 못 함.
 
@@ -62,30 +62,16 @@ implement 단계가 관리하는 필드. plan이 만든 `features[]`의 각 feat
 - 구현 도중 step **추가는 자유**. 재정렬·삭제는 **커밋 전 step 한정** (커밋된 step 불변성은 §4.5 참조). plan과 달리 stable contract 아님
 - 사용자에게 steps 초안을 보여주고 합의 받은 뒤 코딩 시작 (사전 점검 게이트)
 
-## `features[].criteria` — evaluator 판정용 acceptance criteria
+## `features[].criteria` — 사용 원칙 (plan 소유, 읽기 전용)
 
-implement가 소유하는 필드. feature의 `what`(사용자 관측 한 줄)을 evaluator가 이진(PASS/FAIL) 판정할 수 있는 **검증 가능한 criterion 배열**로 번역한 것. stack(backend/frontend)에 따라 관측 수단이 다를 뿐 개념은 동일.
+`criteria`는 **plan skill이 소유**한다. feature의 `what` 확정과 함께 박힌 Acceptance Criteria 배열이며, implement는 이를 **수정하지 않고** evaluator에 그대로 전달한다.
 
-**왜 필요한가**: plan의 `what`은 도메인 한 줄이라 그대로 evaluator에 넘기면 모호하다. implement가 호출 시점에 즉흥 생성하면 사용자가 합의하지 않은 criterion으로 PASS/FAIL이 결정된다. Sprint Contract의 핵심 단계 — 누락되면 평가 전체가 흔들린다.
+**원칙**:
+- 평가 체인(§5.2)에 호출 직전 **새로 만들지 않는다**. plan이 이미 합의한 배열을 그대로 사용
+- criterion 내용이 부적절해 보이면(누락·회귀 가드 전락·자동 검증 불가 섞임 등) 사용자에게 보고 후 **plan으로 돌아가 갱신**. implement에서 임의 수정 금지
+- runtime 중 자동 검증 불가로 드러나도 criteria에서 제거하지 않는다. 대신 `manual_verification`에 동일 내용을 이관해 수동 확인 리마인더로 전환 (§manual_verification 참조)
 
-**스키마**: feature 안에 객체 배열로 중첩. 기존 evaluator 입력 포맷과 동일(`agents/evaluator-functional-backend.md`·`agents/evaluator-functional-frontend.md` 입력 섹션 참조).
-
-```json
-"features": [
-  {
-    "what": "사용자가 관측하는 동작 한 줄",
-    "status": "TODO",
-    "criteria": [
-      { "criterion": "검증 가능한 한 줄 (stack에 맞는 관측 수단으로)" }
-    ],
-    "steps": [ ]
-  }
-]
-```
-
-**언제 생성하는가**: §2(a) steps 초안 생성과 **동시에**. 사용자에게 steps·criteria를 한 묶음으로 제시하고 합의받는다. 이 합의가 Sprint Contract의 실체.
-
-**작성 규칙·stack별 예시·자동 검증 불가 케이스·수정·공통 금지**: [references/criteria-authoring.md](references/criteria-authoring.md) 참조.
+**작성 규칙·stack별 관측 수단·나쁜 패턴**: plan skill의 [`../plan/references/criteria-authoring.md`](../plan/references/criteria-authoring.md) 참조.
 
 ## `manual_verification` — 사람이 눈으로 확인해야 할 항목
 
@@ -113,8 +99,8 @@ implement가 소유하는 필드. feature의 `what`(사용자 관측 한 줄)을
 
 **언제 기록하나 (두 경로)**:
 
-1. **criteria 초안 작성 시점 (§2(a))**: feature.what에 시각 연출·체감 판정 요소가 포함되면 해당 항목을 criteria가 아닌 `manual_verification` 초안에 담아 사용자와 합의. 상세 이관 기준은 `references/criteria-authoring.md` §5 참조.
-2. **evaluator SKIP 시점 (§5.2)**: functional evaluator가 SKIP을 내면서 `recommendation`에 "manual_verification 이관 권장"을 명시하면, coordinator(implement)가 해당 criterion을 `manual_verification`에 한 줄 요약으로 append. 사용자 질문 없이 조용히 수행.
+1. **implement 시작 시점 (§2(a) steps 준비 전)**: plan의 criteria를 훑어 자동 검증 불가로 보이는 항목(canvas 내부·시각 연출·음향·체감)이 섞여 있으면 사용자에게 알리고 plan 갱신 요청. 사용자가 "이관 진행" 합의하면 해당 criterion을 plan 파일의 `criteria`에서 제거하고 `manual_verification`에 동일 내용 추가. 상세 이관 기준은 `../plan/references/criteria-authoring.md` §5 참조.
+2. **evaluator SKIP 시점 (§5.2)**: functional evaluator가 SKIP을 내면서 `recommendation`에 "manual_verification 이관 권장"을 명시하면, coordinator(implement)가 해당 criterion을 `manual_verification`에 한 줄 요약으로 append. 사용자 질문 없이 조용히 수행 (plan criteria는 그대로 둠 — 감사 기록 목적).
 
 판단 모호하면 AskUserQuestion. evaluator recommendation이 명시적 이관 권고면 조용히 append.
 
@@ -216,7 +202,7 @@ implement가 소유하는 필드. feature의 `what`(사용자 관측 한 줄)을
 2. 현재 처리할 feature를 만족시키는 **구체 build unit**으로 steps 초안을 만든다
    - 한 step = 1~수 커밋 분량의 작업 단위
    - 파일 경로는 최소한으로만 (step의 "what"에 암시적으로). 전체 manifest 작성 금지
-3. **feature.what을 evaluator가 이진 판정 가능한 criterion 배열로 번역해 `criteria` 초안 생성**. stack(CLAUDE.md 실행 방법 block의 `stack:` 값)에 맞는 관측 수단으로 작성. 작성 규칙·예시·자동 검증 불가 케이스 처리는 [references/criteria-authoring.md](references/criteria-authoring.md) 참조
+3. **plan의 `features[].criteria` 확인**. plan이 이미 합의한 Acceptance Criteria 배열을 읽는다. 비어 있거나 자동 검증 불가 항목이 섞여 보이면 사용자에게 알리고 plan 갱신 요청 (implement에서 직접 수정 금지). 정상이면 그대로 §2(a) steps 준비로 진행
 4. steps 초안 + criteria 초안을 **한 묶음**으로 사용자에게 제시하고 합의 받음. 수정 지시 반영 후 재확인 (이 합의가 Sprint Contract의 실체)
 5. 합의되면 해당 feature의 `steps`에 write(모든 step `status: "todo"`), `criteria`에도 write. 이 시점 이후 feature 구현은 criteria를 contract로 진행 — 임의 수정·삭제 금지
 
@@ -348,10 +334,20 @@ step 작업이 끝나면:
    - `stack:` 미정의 또는 위 둘 외 값 → functional evaluator skip하고 사용자에게 한 줄 안내, **3번 evaluator-code로 직행**
 
 3. **functional evaluator 호출** (stack 매칭 시만):
-   - `Agent` tool로 dispatch. 평가자에 **실행 방법 block 전체**(`start`/`health`/`stop`/`base_url`/`log_path` 등) + **현재 feature의 `criteria` 필드 그대로** + (선택) DB 접근 정보 전달
-   - `criteria`는 §2(a)에서 사용자와 이미 합의된 배열. **호출 시점에 새로 만들지 말 것**. 누락·불일치 시 Sprint Contract 위반
+
+   **3-a. Generated spec 우선 시도** (`stack: frontend`이고 app에 playwright 인프라가 있을 때만 해당. 없으면 3-b로 바로):
+   - 변경된 파일 경로로부터 app 루트 결정 — nearest `package.json` + `playwright.config.ts`가 모두 있는 디렉토리
+   - `<app_root>/tests/evaluator-generated/<feature.id>.spec.ts` 존재 여부 확인
+   - 있으면 Bash로 해당 app의 e2e 실행 (예: `pnpm --filter <package-name> test:e2e <relative-spec-path>`)
+     - exit 0 → spec이 여전히 유효. functional evaluator **호출 skip**하고 PASS로 간주, 4번(evaluator-code)으로 직행
+     - exit 비-0 → spec stale. 3-b로 진행 (평가자가 재판정하며 spec 재생성)
+   - 없으면 → 3-b로 진행
+
+   **3-b. Agent dispatch** (spec 미적용 또는 stale 시):
+   - `Agent` tool로 dispatch. 평가자에 **실행 방법 block 전체**(`start`/`health`/`stop`/`base_url`/`log_path` 등) + **현재 feature의 `criteria` 필드 그대로** + `feature.id` (frontend는 spec 파일명 기준) + (선택) DB 접근 정보 전달
+   - `criteria`는 **plan에서 이미 합의된 배열**. **호출 시점에 새로 만들지 말 것**. 누락·불일치 시 Sprint Contract 위반
    - **환경 부트스트랩(spawn/health/stop) 책임은 평가자**. implement는 명령 정보만 전달, 직접 spawn 안 함
-   - 평가자가 자체 health check → 필요 시 spawn → 평가 → finally stop 수행
+   - 평가자가 자체 health check → 필요 시 spawn → 평가 → (frontend는) spec 저장 → finally stop 수행
    - **프롬프트 금칙어 MUST**: "환경 부팅 불가 시 SKIP 허용", "curl-less OK", "env 없으면 skip" 류의 pre-escape hatch 문구를 평가자에게 전달 금지. SKIP 조건 판단은 평가자 내부 기준(실제 spawn 시도 후 timeout)만을 따르도록 둔다. 호출자가 미리 탈출구를 열어주면 평가자가 실제 시도 없이 무시하는 사고가 반복된다
    - 결과: PASS → 4번. FAIL → evaluator-code skip, evidence 그대로 출력 후 §5.3로
    - SKIP(평가자가 boot timeout 등으로 환경 확보 실패) → evaluator-code skip, evidence 보고 후 §5.3로

@@ -18,21 +18,21 @@ Developer productivity tools for git workflow, project management, and skill eva
 | sql | `/sql` | SQL 조회 실행 — 캐시 기반 테이블 매칭, 모호성 자동 해소, SELECT 쿼리 생성·실행 |
 | worktree | `/worktree` | Git worktree 생성/삭제 (bare-repo 하위 디렉토리) |
 
-### dev-workflow (v1.13.0)
+### dev-workflow (v1.14.0)
 
 Plan-implement-evaluate feature development workflow with automated quality gates, driven by per-feature JSON files in progress/ directory.
 
 | Skill | Command | Description |
 |---|---|---|
 | implement | `/implement` | progress/{feature-id}.json의 features를 배열 순서대로 구현 (feature 단위 휴먼 게이트, 완료 시 evaluator 체인 자동 트리거) |
-| plan | `/plan` | 기능 설명을 받아 progress/{feature-id}.json에 feature를 생성 |
+| plan | `/plan` | 기능 설명을 받아 progress/{feature-id}.json에 feature·Acceptance Criteria를 생성 |
 
 **Agents**
 
 | Agent | Description |
 |---|---|
 | evaluator-functional-backend | 살아있는 backend dev server에 HTTP·DB·log 기반으로 feature acceptance criteria 1:1 검증 (평가 체인 1단계, stack=backend) |
-| evaluator-functional-frontend | 살아있는 frontend dev server에 Playwright DOM 기반으로 feature acceptance criteria 1:1 검증 (평가 체인 1단계, stack=frontend) |
+| evaluator-functional-frontend | 살아있는 frontend dev server에 Playwright DOM·network 기반으로 acceptance criteria 1:1 검증하고 PASS 항목을 재실행용 spec 파일로 저장 (평가 체인 1단계, stack=frontend) |
 | evaluator-code | feature 전체 diff에서 아키텍처 준수·리팩터링 여지·성능 anti-pattern·테스트 규칙 준수 4초점 판정, JSON 출력 (평가 체인 2단계, functional PASS 후 또는 stack 미정의로 functional skip 시) |
 
 ### note-plugins (v1.5.0)
