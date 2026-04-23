@@ -35,7 +35,7 @@ Plan-implement-evaluate feature development workflow with automated quality gate
 | evaluator-functional-frontend | 살아있는 frontend dev server에 Playwright DOM 기반으로 feature acceptance criteria 1:1 검증 (평가 체인 1단계, stack=frontend) |
 | evaluator-code | feature 전체 diff에서 아키텍처 준수·리팩터링 여지·성능 anti-pattern·테스트 규칙 준수 4초점 판정, JSON 출력 (평가 체인 2단계, functional PASS 후 또는 stack 미정의로 functional skip 시) |
 
-### note-plugins (v1.4.0)
+### note-plugins (v1.5.0)
 
 Engineering daybook entries, knowledge notes, and English study logs.
 
